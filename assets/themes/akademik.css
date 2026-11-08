@@ -98,3 +98,7 @@ h2#dikkat-edilmesi-gerekenler ~ .alert .alert-desc code { font-size: 8.4pt; }
 /* ---------- Tekrar soruları ---------- */
 h2#tekrar-sorulari + ol > li { padding-left: 9mm; margin: 2.2mm 0; }
 h2#tekrar-sorulari + ol > li::before { content: counter(q, lower-roman) "."; left: 0; top: 0; font-style: italic; color: var(--accent); }
+
+/* Uzun kod blokları sayfa sonunda bölünebilir; her parçada en az 3 satır kalır */
+.code-block { page-break-inside: auto; }
+.code-block pre { orphans: 3; widows: 3; }
