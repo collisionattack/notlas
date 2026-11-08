@@ -1,9 +1,9 @@
 ---
-name: udemy-ders-notu
-description: Udemy (veya benzeri) bir kurs dersinin transkriptini, kurs adı ve açıklamasıyla birlikte Türkçe, yapılandırılmış bir ders notuna dönüştürür; notu kalıcı bir not deposuna Markdown + PDF olarak kaydeder ve kurs dizinini (INDEX.md) günceller. Kullanıcı bir ders transkripti verip "ders notu çıkar", "notlaştır", "PDF yap" dediğinde ya da /udemy-ders-notu yazdığında kullan.
+name: notlas
+description: Notlas — Udemy (veya benzeri) bir kurs dersinin transkriptini, kurs adı ve açıklamasıyla birlikte Türkçe, yapılandırılmış bir ders notuna dönüştürür; notu kalıcı bir not deposuna Markdown + PDF olarak kaydeder ve kurs dizinini (INDEX.md) günceller. Kullanıcı bir ders transkripti verip "ders notu çıkar", "notlaştır", "PDF yap" dediğinde ya da /notlas yazdığında kullan.
 ---
 
-# Udemy Ders Notu
+# Notlas — Ders Notu Derleyici
 
 Kullanıcının verdiği ders transkriptini, ileride hem kendisinin hem de geliştirme yaparken kullanacağı agent'ların bilgi kaynağı olarak okuyabileceği bir **ders notuna** dönüştür ve not deposuna kaydet.
 
@@ -98,6 +98,7 @@ Aynı ders yeniden kaydedilirse dosyaların üzerine yazılır ve dizindeki kayd
 
 **Kök klasör nerede olmalı:**
 - Kullanıcı bir yol söylediyse onu kullan.
+- Notlas proje klasöründe çalışılıyorsa (klasörde `CLAUDE.md` ve `ders-notlari/` varsa) kök her zaman o `ders-notlari/` klasörüdür.
 - Claude Code'da veya kullanıcının bilgisayarında bir klasör bağlıysa: kullanıcının belirttiği not deposu; belirtmediyse çalışma dizininde `ders-notlari/`. Kullanıcının bilgisayarına yalnızca uzaktan dosya erişimi varsa, depoyu çalışma alanında üret ve değişen dosyaları (not .md, .pdf, INDEX.md, kurs.json, README.md) aynı göreli yollarla o klasöre yaz.
 - Hiçbiri yoksa (bulut sohbeti): çalışma dizininde `ders-notlari/` oluştur, sonra kullanıcıya not .md ve .pdf dosyasını, ayrıca tüm depoyu tek parça indirebilmesi için `ders-notlari.zip`'i gönder.
 

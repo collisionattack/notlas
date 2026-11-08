@@ -1,6 +1,6 @@
-# udemy-ders-notu
+# Notlas
 
-Udemy (veya herhangi bir video kurs) ders transkriptlerini Türkçe, yapılandırılmış ders notlarına dönüştüren bir **Claude skill**'i. Notlar kalıcı bir **not deposuna** hem Markdown hem PDF olarak kaydedilir. Markdown dosyaları, geliştirme yaparken agent'lara bilgi kaynağı olarak verilmek üzere tasarlanmıştır.
+*not + atlas*: Udemy (veya herhangi bir video kurs) ders transkriptlerini Türkçe, yapılandırılmış ders notlarına dönüştüren bir **Claude skill**'i. Notlar kalıcı bir **not deposuna** hem Markdown hem PDF olarak kaydedilir. Markdown dosyaları, geliştirme yaparken agent'lara bilgi kaynağı olarak verilmek üzere tasarlanmıştır.
 
 ## Nasıl çalışır
 
@@ -22,13 +22,25 @@ ders-notlari/
 
 Bir agent'a kursu bilgi kaynağı olarak vermek için `<kurs-slug>/INDEX.md` dosyasını göstermen yeterli. Agent dizinden ilgili dersi bulur ve yalnızca o Markdown dosyasını açar. Örnek depo için `examples/ders-notlari/` klasörüne bak.
 
+## Proje klasörü olarak kullanım
+
+Depoyu klonlayıp Claude Code veya Claude masaüstü uygulamasında bu klasörü aç. `CLAUDE.md` iş akışını tanımlar:
+
+```
+notlas/
+├── CLAUDE.md          # Claude'a çalışma talimatları
+├── SKILL.md           # Not formatı ve yazım kuralları
+├── transkriptler/     # Ham transkriptleri buraya bırak (git dışı)
+└── ders-notlari/      # Kalıcı not deposu (git dışı)
+```
+
 ## Kurulum
 
-**Claude uygulaması:** Bu klasörü ZIP olarak sıkıştır (veya Releases'teki `udemy-ders-notu.zip`'i indir). **Customize → Skills → + → Create skill → Upload a skill** yoluyla yükle. Settings → Capabilities altında kod çalıştırma ve dosya oluşturma açık olmalı.
+**Claude uygulaması:** Bu klasörü ZIP olarak sıkıştır (veya Releases'teki `notlas.zip`'i indir). **Customize → Skills → + → Create skill → Upload a skill** yoluyla yükle. Settings → Capabilities altında kod çalıştırma ve dosya oluşturma açık olmalı.
 
 **Claude Code:**
 ```bash
-git clone https://github.com/<kullanici>/udemy-ders-notu ~/.claude/skills/udemy-ders-notu
+git clone https://github.com/<kullanici>/notlas ~/.claude/skills/notlas
 ```
 
 ## Kullanım
@@ -40,7 +52,7 @@ git clone https://github.com/<kullanici>/udemy-ders-notu ~/.claude/skills/udemy-
 >
 > Bunu ders notu yap.
 
-ya da `/udemy-ders-notu` yaz.
+ya da `/notlas` yaz.
 
 ## Betikler
 
@@ -55,6 +67,7 @@ python3 scripts/build_pdf.py not.md -o not.pdf                          # yalnı
 ## Dosyalar
 
 ```
+CLAUDE.md                   # Proje klasörü iş akışı
 SKILL.md                    # Claude'a talimatlar: not formatı, yazım kuralları, kayıt akışı
 scripts/clean_transcript.py # Zaman damgası ve tekrar eden satırları temizler
 scripts/save_note.py        # Not deposuna kaydeder, INDEX.md / kurs.json / README.md üretir
