@@ -52,7 +52,7 @@ VARIANTS = {
 # ---------------------------------------------------------------- parsing helpers
 def slug(text: str, max_len: int = 60) -> str:
     s = build_pdf.slugify(text or "")
-    return s[:max_len].rstrip("-") or "adsiz"
+    return s[:max_len].rstrip("-") or "untitled"
 
 
 def number_and_title(text: str, prefix: str):
@@ -282,7 +282,7 @@ def save(note: Path, root: Path, description: str = "", pdf: bool = True,
     first_h1 = re.search(r"^#\s+(.+)$", body, re.M)
     l_no, l_title = number_and_title(meta.get("lecture") or (first_h1.group(1) if first_h1 else note.stem),
                                      "Ders|Lecture")
-    sec_dir = f"{s_no:02d}-{slug(s_title)}" if s_no is not None else (slug(s_title) if s_title else "genel")
+    sec_dir = f"{s_no:02d}-{slug(s_title)}" if s_no is not None else (slug(s_title) if s_title else "general")
     file_stem = f"{l_no:03d}-{slug(l_title)}" if l_no is not None else slug(l_title)
     md_target = course_dir / "notes" / sec_dir / f"{file_stem}.md"
     pdf_target = course_dir / "pdf" / sec_dir / f"{file_stem}.pdf"

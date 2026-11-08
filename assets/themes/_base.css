@@ -21,7 +21,6 @@ li { margin: 1mm 0; }
 .cover .meta div { flex: 1; }
 .cover .meta .k, .cover .meta .v { display: block; }
 .cover .foot { margin-top: auto; }
-.cover .cover-topics { display: none; }
 .s-lecture { string-set: lecture content(); display: block; height: 0; overflow: hidden; font-size: 0; }
 .cover .eyebrow { string-set: course content(); }
 

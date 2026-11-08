@@ -36,7 +36,7 @@ ASSETS = HERE.parent / "assets"
 THEMES_DIR = ASSETS / "themes"
 DEFAULT_THEME = "academic"
 FONTS_DIR = ASSETS / "fonts"
-AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz",
+TR_MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz",
          "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 TR_MAP = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
 
@@ -133,7 +133,7 @@ def build_alerts(body: str) -> str:
                            f'<div class="alert-title">{title}</div>'
                            f'<div class="alert-desc"><p>{text}</p></div></div></div>')
             elif out and out[-1].startswith('<div class="alert'):
-                # Uyarının devam paragrafı
+                # follow-up paragraph of the same callout
                 out[-1] = out[-1].replace("</div></div></div>", f"<p>{p}</p></div></div></div>", 1)
             else:
                 plain.append(p)
@@ -149,7 +149,7 @@ def _marker(p: str):
     for sym, kind, title in MARKERS:
         if s.startswith(sym):
             text = s[len(sym):].lstrip("️").strip()
-            # "Ek not:" / "<strong>Başlık:</strong>" gibi kısa önekleri başlık yap
+            # a short prefix such as "Ek not:" or "<strong>Title:</strong>" becomes the callout title
             tm = re.match(r"^(?:<strong>)?([^<:]{2,30}):(?:</strong>)?\s*(.*)$", text, re.S)
             if tm:
                 title, text = tm.group(1).strip(), tm.group(2)
@@ -170,46 +170,37 @@ def render_html(md_text: str, meta: dict, toc: bool, theme: str = DEFAULT_THEME)
     body = build_alerts(body)
 
     first_h1 = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.S)
-    ders = meta.get("lecture") or (re.sub("<[^>]+>", "", first_h1.group(1)) if first_h1 else "Ders Notu")
-    kurs = meta.get("course", "")
-    bolum = meta.get("section", "")
-    bugun = dt.date.today()
-    tarih = f"{bugun.day} {AYLAR[bugun.month - 1]} {bugun.year}"
+    lecture = meta.get("lecture") or (re.sub("<[^>]+>", "", first_h1.group(1)) if first_h1 else "Ders Notu")
+    course = meta.get("course", "")
+    section = meta.get("section", "")
+    today = dt.date.today()
+    date_str = f"{today.day} {TR_MONTHS[today.month - 1]} {today.year}"
     e = html.escape
 
-    # "Ders 18 - List Comprehension" → numara "18", başlık "List Comprehension"
-    nm = re.match(r"^\s*(?:Ders|Lecture|Bölüm)?\s*(\d+)\s*[-–—:.]\s*(.+)$", ders, re.I)
-    ders_no, ders_baslik = (nm.group(1), nm.group(2)) if nm else ("", ders)
-    bm = re.match(r"^\s*(?:Bölüm|Section)?\s*(\d+)\s*[-–—:.]\s*(.+)$", bolum, re.I)
-    bolum_no, bolum_baslik = (bm.group(1), bm.group(2)) if bm else ("", bolum)
+    # "Ders 18 - List Comprehension" → number "18", title "List Comprehension"
+    nm = re.match(r"^\s*(?:Ders|Lecture|Bölüm)?\s*(\d+)\s*[-–—:.]\s*(.+)$", lecture, re.I)
+    lecture_no, lecture_title = (nm.group(1), nm.group(2)) if nm else ("", lecture)
+    bm = re.match(r"^\s*(?:Bölüm|Section)?\s*(\d+)\s*[-–—:.]\s*(.+)$", section, re.I)
+    section_no, section_title = (bm.group(1), bm.group(2)) if bm else ("", section)
 
     meta_cells = "".join(
         f'<div><span class="k">{k}</span><span class="v">{e(v)}</span></div>'
-        for k, v in [("Kurs", kurs), ("Bölüm", bolum), ("Tarih", tarih)] if v)
+        for k, v in [("Kurs", course), ("Bölüm", section), ("Tarih", date_str)] if v)
     cover = (
         '<section class="cover"><div class="cover-art"></div>'
         f'<div class="cover-top"><span class="badge">Ders Notu</span>'
-        f'<span class="cover-date">{tarih}</span></div>'
+        f'<span class="cover-date">{date_str}</span></div>'
         '<div class="cover-main">'
-        + (f'<div class="cover-num"><span class="lbl">Ders</span>{e(ders_no)}</div>' if ders_no else "")
-        + (f'<div class="eyebrow">{e(kurs)}</div>' if kurs else "")
-        + f'<h1 class="title">{e(ders_baslik)}</h1>'
-        + (f'<div class="desc">{"<b>Bölüm " + e(bolum_no) + "</b> · " if bolum_no else ""}{e(bolum_baslik)}</div>'
-           if bolum else "")
+        + (f'<div class="cover-num"><span class="lbl">Ders</span>{e(lecture_no)}</div>' if lecture_no else "")
+        + (f'<div class="eyebrow">{e(course)}</div>' if course else "")
+        + f'<h1 class="title">{e(lecture_title)}</h1>'
+        + (f'<div class="desc">{"<b>Bölüm " + e(section_no) + "</b> · " if section_no else ""}{e(section_title)}</div>'
+           if section else "")
         + '</div><div class="separator"></div>'
         + f'<div class="meta">{meta_cells}</div>'
         + '<div class="foot">Ders transkriptinden derlenmiştir · Kişisel kullanım içindir</div>'
-        '<span class="s-lecture">' + e(ders) + '</span></section>'
+        '<span class="s-lecture">' + e(lecture) + '</span></section>'
     )
-
-    YAN = {"ozet", "onemli-kavramlar", "dikkat-edilmesi-gerekenler", "tekrar-sorulari"}
-    konular = [re.sub("<[^>]+>", "", t) for i, t in re.findall(r'<h2 id="([^"]*)">(.*?)</h2>', body, re.S)
-               if i not in YAN]
-    if konular:
-        lis = "".join(f'<li><span>{n:02d}</span>{e(k)}</li>' for n, k in enumerate(konular[:12], 1))
-        cover = cover.replace('</div><div class="separator">',
-                              '</div><div class="cover-topics"><div class="ct-head">cat konular.txt</div>'
-                              f'<ol>{lis}</ol></div><div class="separator">', 1)
 
     toc_html = ""
     if toc and body.count("<h2") + body.count("<h1") >= 4:
@@ -224,7 +215,7 @@ def render_html(md_text: str, meta: dict, toc: bool, theme: str = DEFAULT_THEME)
     pyg_css = HtmlFormatter(style=pm.group(1) if pm else "github-dark").get_style_defs(".codehilite")
     return (
         f'<!doctype html><html lang="tr" class="theme-{e(theme)}"><head><meta charset="utf-8">'
-        f"<title>{e(ders)}</title><style>{font_faces()}\n{pyg_css}\n"
+        f"<title>{e(lecture)}</title><style>{font_faces()}\n{pyg_css}\n"
         f".codehilite{{background:transparent!important}}\n{css}"
         "</style></head><body>"
         f'{cover}{toc_html}<main class="content">{body}</main></body></html>'
@@ -235,8 +226,8 @@ FAMILIES = {"inter": "Inter", "eb-garamond": "EB Garamond",
             "jetbrains-mono": "JetBrains Mono"}
 
 def font_faces() -> str:
-    """assets/fonts içindeki <aile>-<ağırlık>-<stil>.woff2 dosyalarından @font-face üretir.
-    Her dosya Latin + Latin Extended (Türkçe) karakterleri birlikte içerir."""
+    """Build @font-face rules from assets/fonts/<family>-<weight>-<style>.woff2.
+    Each file contains Latin and Latin Extended (incl. Turkish) glyphs."""
     rules = []
     for f in sorted(FONTS_DIR.glob("*.woff2")):
         m = re.match(r"^(.+?)-(\d{3})-(normal|italic)$", f.stem)
@@ -251,8 +242,8 @@ def font_faces() -> str:
 def theme_css(theme: str) -> str:
     path = THEMES_DIR / f"{theme}.css"
     if not path.exists():
-        mevcut = ", ".join(sorted(p.stem for p in THEMES_DIR.glob("*.css")))
-        sys.exit(f"Theme not found: {theme}. Available: {mevcut}")
+        available = ", ".join(sorted(p.stem for p in THEMES_DIR.glob("*.css")))
+        sys.exit(f"Theme not found: {theme}. Available: {available}")
     css = path.read_text(encoding="utf-8")
     if "uses: base" in css:
         css = (THEMES_DIR / "_base.css").read_text(encoding="utf-8") + "\n" + css
@@ -270,9 +261,9 @@ def pdf_weasyprint(html_str: str, out: Path) -> bool:
 
 
 def pdf_chrome(html_str: str, out: Path) -> bool:
-    adaylar = [shutil.which(n) for n in
+    candidates = [shutil.which(n) for n in
                ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome", "msedge"]]
-    adaylar += [  # macOS ve Windows'ta tarayıcılar PATH'te olmaz
+    candidates += [  # on macOS and Windows, browsers are usually not on PATH
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "/Applications/Chromium.app/Contents/MacOS/Chromium",
         "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
@@ -280,7 +271,7 @@ def pdf_chrome(html_str: str, out: Path) -> bool:
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
     ]
-    exe = next((a for a in adaylar if a and Path(a).exists()), None)
+    exe = next((a for a in candidates if a and Path(a).exists()), None)
     if not exe:
         return False
     with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
