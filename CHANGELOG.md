@@ -6,9 +6,12 @@
 
 - **Cover layout with long texts.** Long course, section or lecture names no longer run off the cover: the course / section / date row is a fixed three-column row whose cells wrap, the date stays on one line, long lecture titles get a smaller cover font, and the cover block is vertically centred.
 - **Long inline code** (identifiers in margin notes, table cells and body text) wraps inside its column instead of leaving the page; short identifiers are not split.
+- **Missing Pillow in the install command.** `scripts/preview.py` needs Pillow, but the dependency install command in `SKILL.md` did not install it, so in an environment without Pillow the preview stopped with exit code 1 instead of rendering.
 
 ### Added
 
+- **Tests and CI.** A `pytest` suite under `tests/` covers the transcript cleaner, the note validation and indexing in `save_note.py`, and the Markdown handling in `build_pdf.py`; a GitHub Actions workflow runs it on Python 3.9 and 3.12. Run it with `pip install -r requirements.txt pytest && pytest`.
+- **`requirements.txt`** lists the four runtime dependencies in one place.
 - **Automatic preview.** After each save Claude renders the cover and first content pages into one image (`scripts/preview.py`), checks it, and shows it together with the PDF without being asked. In Claude Code on macOS the PDF is also opened directly.
 
 ## v0.1.0 — 2026-11-08

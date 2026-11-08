@@ -144,9 +144,9 @@ Rules:
 Install dependencies if needed (the first command that works is enough):
 
 ```bash
-pip install -q weasyprint markdown pygments 2>/dev/null \
-  || pip install --break-system-packages -q weasyprint markdown pygments 2>/dev/null \
-  || pip3 install --user -q weasyprint markdown pygments
+pip install -q weasyprint markdown pygments pillow 2>/dev/null \
+  || pip install --break-system-packages -q weasyprint markdown pygments pillow 2>/dev/null \
+  || pip3 install --user -q weasyprint markdown pygments pillow
 ```
 
 Save (several notes can be passed at once):
