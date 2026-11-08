@@ -3,7 +3,7 @@ __pycache__/
 *.html
 .DS_Store
 
-/lecture-notes/
+/courses/
 /transcripts/
 
 # Files the remote tools could not delete (safe to remove)

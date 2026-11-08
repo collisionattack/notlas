@@ -2,9 +2,9 @@
 """Save lecture notes (Markdown) into the notes repository, render their PDFs and rebuild the indexes.
 
 Usage:
-    python3 save_note.py NOTE.md [NOTE2.md ...] --root lecture-notes [--course-description "..."]
-    python3 save_note.py --list-courses --root lecture-notes
-    python3 save_note.py --reindex --root lecture-notes [--course <course-slug>] [--prune]
+    python3 save_note.py NOTE.md [NOTE2.md ...] --root courses [--course-description "..."]
+    python3 save_note.py --list-courses --root courses
+    python3 save_note.py --reindex --root courses [--course <course-slug>] [--prune]
 
 Repository layout (agents read the Markdown, humans read the PDFs):
 
@@ -218,6 +218,26 @@ def list_courses(root: Path):
             for kj in sorted(root.glob("*/course.json"))]
 
 
+def label(no, title, word, empty="-"):
+    """'Bölüm 5 - Title' / 'Ders 23 - Title' (or just the title when there is no number)."""
+    return f"{word} {no} - {title}" if no is not None else (title or empty)
+
+
+def course_overview(root: Path):
+    """One line per course: folder, name, lecture count, and the last (highest-numbered) lecture."""
+    lines = []
+    for kj in sorted(root.glob("*/course.json")):
+        v = json.loads(kj.read_text(encoding="utf-8"))
+        lectures = v.get("lectures", [])
+        line = f"{kj.parent.name} | {v['course']} | {len(lectures)} ders"
+        if lectures:
+            last = lectures[-1]  # course.json is kept sorted by section and lecture number
+            line += (f" | son: {label(last['section_no'], last['section'], 'Bölüm', 'Genel')} / "
+                     f"{label(last['lecture_no'], last['lecture'], 'Ders')}")
+        lines.append(line)
+    return lines
+
+
 STOPWORDS = {"ve", "ile", "icin", "kurs", "kursu", "egitimi", "the", "and", "for", "with", "course",
              "complete", "guide", "a", "to", "z", "sifirdan", "ileri", "seviye", "web", "full", "stack",
              "gelistirme", "programlama", "temelleri", "bootcamp", "masterclass", "uygulamali", "pratik",
@@ -314,14 +334,15 @@ def save(note: Path, root: Path, description: str = "", pdf: bool = True,
 def main():
     ap = argparse.ArgumentParser(description="Save lecture notes into the notes repository (MD + PDF + indexes)")
     ap.add_argument("notes", nargs="*", help="Note Markdown file(s) to save")
-    ap.add_argument("--root", default="lecture-notes", help="Notes repository root (default: ./lecture-notes)")
+    ap.add_argument("--root", default="courses", help="Notes repository root (default: ./courses)")
     ap.add_argument("--course-description", dest="desc", default="",
                     help="Course description (stored in INDEX.md and course.json)")
     ap.add_argument("--no-pdf", dest="no_pdf", action="store_true", help="Save Markdown only")
     ap.add_argument("--new-course", action="store_true", help="Confirm that a course name is genuinely new")
     ap.add_argument("--overwrite", action="store_true", help="Replace a different lecture stored at the same path")
     ap.add_argument("--skip-checks", action="store_true", help="Skip note-structure validation")
-    ap.add_argument("--list-courses", action="store_true", help="List existing courses and exit")
+    ap.add_argument("--list-courses", action="store_true",
+                    help="List courses as 'folder | name | N ders | son: <last section> / <last lecture>' and exit")
     ap.add_argument("--reindex", action="store_true", help="Rebuild indexes from course.json + notes on disk")
     ap.add_argument("--prune", action="store_true",
                     help="With --reindex: drop index entries whose note file no longer exists "
@@ -331,8 +352,8 @@ def main():
     root = Path(a.root)
 
     if a.list_courses:
-        courses = list_courses(root)
-        print("\n".join(f"{s}\t{t}" for s, t in courses) if courses else f"No courses yet in {root}/")
+        lines = course_overview(root)
+        print("\n".join(lines) if lines else f"No courses yet in {root}/")
         return
     if a.reindex:
         dirs = [root / a.course] if a.course else [p.parent for p in root.glob("*/course.json")] + \

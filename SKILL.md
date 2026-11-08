@@ -1,6 +1,6 @@
 ---
 name: notlas
-description: Turn a course lecture transcript (Udemy or any video course; pasted text or a .vtt/.srt/.txt file) into a structured Turkish study note, saved as Markdown + PDF in the user's indexed notes repository (lecture-notes/). Use when the user shares a lecture transcript and asks to make notes from it ("ders notu çıkar", "notlaştır", "bu dersi not al", "turn this transcript into notes"), asks to process transcripts in the transcripts/ folder, or invokes /notlas (Claude Code). Not for general PDF creation or summarizing other documents.
+description: Turn a course lecture transcript (Udemy or any video course; pasted text or a .vtt/.srt/.txt file) into a structured Turkish study note, saved as Markdown + PDF in the user's indexed notes repository (courses/). Use when the user shares a lecture transcript and asks to make notes from it ("ders notu çıkar", "notlaştır", "bu dersi not al", "turn this transcript into notes"), asks to process transcripts in the transcripts/ folder, or invokes /notlas (alone, it replies with a fill-in template). Not for general PDF creation or summarizing other documents.
 ---
 
 # Notlas
@@ -14,11 +14,11 @@ Scripts live in the `scripts/` folder next to this `SKILL.md`. Below, `<skill>` 
 Decide the repository root (`<root>`) first, because later steps read from it:
 
 1. The user named a path → use it.
-2. The working folder contains `CLAUDE.md` and `lecture-notes/` (the Notlas project folder) → `<root>` is that `lecture-notes/`.
+2. The working folder contains `CLAUDE.md` and `courses/` (the Notlas project folder) → `<root>` is that `courses/`.
 3. A folder on the user's computer is connected:
-   - with a shell on that computer → run every script there, `<root>` = `lecture-notes/` inside the folder the user chose.
+   - with a shell on that computer → run every script there, `<root>` = `courses/` inside the folder the user chose.
    - with file transfer only → work on a local copy. **Before saving**, copy **every** `<root>/*/course.json` from the computer into the same relative paths of the local copy (they are small). Afterwards copy back the new note's `.md` and `.pdf` plus the saved course's `INDEX.md` and `course.json`, and the root `README.md`. All of these are needed: without the course's `course.json` its index would list only the new lecture, and without the other courses' `course.json` files the root `README.md` would list only one course. If you could not fetch them, do not copy back `INDEX.md`, `course.json` or `README.md`; copy only the `.md` and `.pdf`, and tell the user to run `save_note.py --reindex` on the computer.
-4. None of the above (plain cloud chat) → `<root>` = `./lecture-notes/`; at the end send the user the note's `.md` and `.pdf`. Mention that indexes only cover this session's notes unless they attach their existing `course.json`.
+4. None of the above (plain cloud chat) → `<root>` = `./courses/`; at the end send the user the note's `.md` and `.pdf`. Mention that indexes only cover this session's notes unless they attach their existing `course.json`.
 
 Then list existing courses:
 
@@ -26,18 +26,54 @@ Then list existing courses:
 python3 <skill>/scripts/save_note.py --list-courses --root <root>
 ```
 
-If the lecture belongs to a listed course, use that course's name **exactly** as listed in the `course:` field. Different spellings create a second course folder.
+Each line reads `folder | course name | N ders | son: Bölüm X - … / Ders Y - …` (the last saved lecture). If the lecture belongs to a listed course, use that course's name **exactly** as listed in the `course:` field. Different spellings create a second course folder.
 
 ## 2. Gather the inputs
+
+The user should never have to remember a format. Collect what you can, offer what you can infer, and ask for the rest **once**.
 
 | Input | Required | Notes |
 |---|---|---|
 | Transcript | Yes | Pasted text, an attached file, or a file in the Notlas `transcripts/` folder |
-| Course name | Yes | Reuse the existing name from step 1 when the course already exists |
-| Section and lecture (title + number) | Strongly recommended | Format `Bölüm 3 - Title`, `Ders 14 - Title`; numbers decide file order and prevent collisions |
-| Course description | No | Context for terminology; pass it to the script on the course's first save, never copy it into the note |
+| Course name | Yes | Must match an existing course exactly, or be confirmed as new |
+| Section number + title | Yes | `Bölüm 5 - App Router Temelleri`; decides the folder and prevents collisions |
+| Lecture number + title | Yes | `Ders 23 - Server Components`; Udemy numbers lectures across the whole course |
+| Course description | Only for a new course, optional | Context for terminology; pass it with `--course-description` on the first save; never copy it into the note |
 
-If there is no transcript, ask for it. For anything else that is missing, make a sensible assumption and continue, except in the cases listed in "Ask only when" below.
+**Where values come from**, in this order:
+1. The user's message, in any form ("Kurs: …", "5. bölüm 23. ders", "Next.js kursunun sonraki dersi").
+2. The transcript file name, when it follows `<course-key>_<section-no>-<lecture-no>.<ext>` (e.g. `nextjs_05-23.vtt`). Match `<course-key>` against the course folders and names from step 1.
+3. The course overview from step 1: for the next lecture of a course, propose the same section as its last lecture and lecture number + 1.
+4. The transcript itself: propose a lecture title from its main topic when the user gave none.
+
+Then pick exactly one of these:
+
+**A. No transcript and no details** (e.g. the user typed only `/notlas`): reply with this fill-in template and wait. Fill in the course list from step 1 (or write "Henüz kurs yok."), and do nothing else in this turn:
+
+```
+Kurs: <aşağıdakilerden biri ya da yeni kursun adı>
+Bölüm: <numara> - <bölüm adı>
+Ders: <numara> - <ders adı>
+Kurs açıklaması: <yalnızca yeni kurs için, isteğe bağlı>
+
+<transkripti buraya yapıştır ya da transcripts/ klasöründeki dosyanın adını yaz>
+```
+
+Mevcut kurslar:
+- <course name> (son: Bölüm X - … / Ders Y - …)
+
+Add one line: "Dosyayı `kurs_bölüm-ders.vtt` adıyla transcripts/ klasörüne koyarsan bilgileri dosya adından alırım."
+
+**B. Transcript present, but course, section or lecture missing or uncertain**: ask **one** round of questions covering everything that is missing, with your inferences as the default choices:
+- If an interactive question tool is available, use it: course as options (existing courses first; the most likely one first; plus "Yeni kurs"), and section/lecture as a proposed value (e.g. "Bölüm 5 - App Router Temelleri / Ders 24 - <önerilen başlık>") with an option to correct it.
+- Otherwise send one short message listing the proposed values; the user answers "evet" or corrects them.
+- If the course is new, include an optional "Kurs açıklaması" field in the same round, not as a separate question.
+- Also include, in the same round, anything else that is genuinely unclear: lecture boundaries in a combined transcript, or a course name that nearly matches an existing one.
+- Write user-facing questions in Turkish.
+
+**C. Everything known** (from the message, the file name, or an unambiguous "next lecture" of an existing course): don't ask; proceed. In the final message, name any value you inferred.
+
+Never ask more than one round. If the answer still leaves something open, choose the most likely value and say so in the final message. When the user is not present (scheduled or unattended run), don't ask at all: use the inferences and state them.
 
 If the transcript is VTT/SRT or has timestamps, clean it first. Write intermediate files to a scratch location (Notlas project: `transcripts/`; otherwise a temp folder), never into `<root>`:
 
@@ -45,13 +81,7 @@ If the transcript is VTT/SRT or has timestamps, clean it first. Write intermedia
 python3 <skill>/scripts/clean_transcript.py <input> > <scratch>/temiz.txt
 ```
 
-**One transcript containing several lectures.** Split it on clear boundaries: the instructor closing a lecture ("bir sonraki derste…", "in the next lecture…"), a new welcome or intro, lecture titles, or a jump in timestamps back to 00:00. Write one note file per lecture.
-
-**Ask only when** (one short question, then proceed without further questions):
-- lecture boundaries in a combined transcript are genuinely unclear, or
-- the course name nearly matches an existing course and you cannot tell whether it is the same course.
-
-When the user is not present (scheduled/unattended run), do not ask: pick the most likely option, and state the choice in your final message.
+**One transcript containing several lectures.** Split it on clear boundaries: the instructor closing a lecture ("bir sonraki derste…", "in the next lecture…"), a new welcome or intro, lecture titles, or a jump in timestamps back to 00:00. Write one note file per lecture, and number them consecutively.
 
 ## 3. Write the note (Markdown)
 

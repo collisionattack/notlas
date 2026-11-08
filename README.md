@@ -15,7 +15,7 @@ Notes are written in Turkish; technical terms keep their original English in par
 ## Notes repository
 
 ```
-lecture-notes/
+courses/
 ├── README.md                             # all courses
 └── <course-slug>/
     ├── INDEX.md                          # per lecture: summary, topics, concepts, file links
@@ -35,12 +35,12 @@ notlas/
 ├── CLAUDE.md        # workflow instructions for Claude
 ├── SKILL.md         # note format and writing rules
 ├── transcripts/   # drop raw transcripts here (git-ignored)
-└── lecture-notes/    # your notes repository (git-ignored)
+└── courses/    # your notes repository (git-ignored)
 ```
 
 ## Installing the skill
 
-**Claude app:** zip this folder without `.git/`, `lecture-notes/`, `transcripts/` and `docs/` (the command is in `CLAUDE.md`), or download `notlas.zip` from Releases, then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
+**Claude app:** zip this folder without `.git/`, `courses/`, `transcripts/` and `docs/` (the command is in `CLAUDE.md`), or download `notlas.zip` from Releases, then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
 
 **Claude Code:** link (or clone) the folder into your personal skills directory:
 ```bash
@@ -50,23 +50,28 @@ git clone https://github.com/mrttyyldrm/notlas ~/.claude/skills/notlas   # or a 
 
 ## Usage
 
+You don't need to remember a format:
+
+- Type `/notlas` (or "notlas skill'ini kullan") on its own and Claude replies with a fill-in template that lists your courses and the last lecture saved in each.
+- Paste a transcript without details and Claude asks once for whatever is missing (course, section, lecture), proposing the next lecture of the most likely course as the default.
+- Drop `nextjs_05-23.vtt` into `transcripts/` and say "notlaştır": course, section and lecture number come from the file name.
+
+Everything at once also works:
+
 > Kurs: Docker ve Kubernetes
 > Bölüm 2 - Depolama / Ders 7 - Docker Volume'ları
-> *(paste the transcript or attach the .vtt/.txt file)*
->
-> Bunu ders notu yap.
-
-In Claude Code you can also type `/notlas`. In the Claude app the skill is picked up automatically; if it isn't, say "use the notlas skill".
+> *(transcript)*
+> Bunu notlaştır.
 
 ## Scripts
 
 ```bash
 pip install weasyprint markdown pygments
 python3 scripts/clean_transcript.py lecture.vtt > lecture.txt          # VTT/SRT → plain text
-python3 scripts/save_note.py note.md --root lecture-notes \
+python3 scripts/save_note.py note.md --root courses \
         --course-description "..."                                    # save: MD + PDF + indexes
-python3 scripts/save_note.py --list-courses --root lecture-notes       # existing courses
-python3 scripts/save_note.py --reindex --root lecture-notes [--prune]  # rebuild indexes from disk
+python3 scripts/save_note.py --list-courses --root courses       # existing courses
+python3 scripts/save_note.py --reindex --root courses [--prune]  # rebuild indexes from disk
 python3 scripts/build_pdf.py note.md -o note.pdf                      # PDF only
 ```
 
