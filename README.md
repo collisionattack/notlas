@@ -1,12 +1,30 @@
 # udemy-ders-notu
 
-Udemy (veya herhangi bir video kurs) ders transkriptlerini Türkçe, yapılandırılmış ders notlarına dönüştüren ve PDF olarak kaydeden bir **Claude skill**'i.
+Udemy (veya herhangi bir video kurs) ders transkriptlerini Türkçe, yapılandırılmış ders notlarına dönüştüren bir **Claude skill**'i. Notlar kalıcı bir **not deposuna** hem Markdown hem PDF olarak kaydedilir. Markdown dosyaları, geliştirme yaparken agent'lara bilgi kaynağı olarak verilmek üzere tasarlanmıştır.
 
-Sen transkripti, kurs adını ve açıklamasını verirsin; Claude dersi yeniden anlatan bir not yazar ve kapaklı, içindekilerli bir PDF + düzenlenebilir Markdown dosyası üretir.
+## Nasıl çalışır
+
+1. Sen transkripti, kurs adını, açıklamasını ve ders/bölüm bilgisini verirsin.
+2. Claude dersi yeniden anlatan bir Markdown not yazar (özet, konular, kod, kavram tablosu, uyarılar, tekrar soruları).
+3. `save_note.py` notu depoya yerleştirir, akademik temalı PDF'i üretir ve kurs dizinini günceller.
+
+## Not deposu yapısı
+
+```
+ders-notlari/
+├── README.md                           # Tüm kurslar
+└── <kurs-slug>/
+    ├── INDEX.md                        # Her ders: özet, konular, kavramlar, dosya yolları
+    ├── kurs.json                       # Aynı bilgi, makinece okunur
+    ├── notlar/<NN-bolum>/<NNN-ders>.md # Agent'ların okuyacağı kaynak
+    └── pdf/<NN-bolum>/<NNN-ders>.pdf   # Okunabilir kopya
+```
+
+Bir agent'a kursu bilgi kaynağı olarak vermek için `<kurs-slug>/INDEX.md` dosyasını göstermen yeterli. Agent dizinden ilgili dersi bulur ve yalnızca o Markdown dosyasını açar. Örnek depo için `examples/ders-notlari/` klasörüne bak.
 
 ## Kurulum
 
-**Claude.ai / Claude uygulaması:** Bu klasörü ZIP olarak sıkıştır (ya da Releases'teki `udemy-ders-notu.zip`'i indir) ve Claude ayarlarındaki *Skills* bölümünden yükle.
+**Claude uygulaması:** Bu klasörü ZIP olarak sıkıştır (veya Releases'teki `udemy-ders-notu.zip`'i indir). **Customize → Skills → + → Create skill → Upload a skill** yoluyla yükle. Settings → Capabilities altında kod çalıştırma ve dosya oluşturma açık olmalı.
 
 **Claude Code:**
 ```bash
@@ -14,8 +32,6 @@ git clone https://github.com/<kullanici>/udemy-ders-notu ~/.claude/skills/udemy-
 ```
 
 ## Kullanım
-
-Yeni bir sohbette:
 
 > Kurs: Docker ve Kubernetes
 > Açıklama: ...
@@ -26,22 +42,26 @@ Yeni bir sohbette:
 
 ya da `/udemy-ders-notu` yaz.
 
-## Yapı
+## Betikler
 
-```
-SKILL.md                    # Claude'a talimatlar: not formatı, yazım kuralları, akış
-scripts/clean_transcript.py # VTT/SRT → düz metin (zaman damgası ve tekrarları temizler)
-scripts/build_pdf.py        # Markdown → PDF (WeasyPrint, yoksa headless Chrome)
-assets/style.css            # PDF teması: shadcn/ui (zinc) görünümü, A4, kapak, içindekiler
-assets/fonts/               # Inter + Geist Mono (OFL lisanslı, Türkçe karakter destekli)
-examples/                   # Örnek transkript, not ve PDF
-```
-
-Betikler tek başına da çalışır:
 ```bash
 pip install weasyprint markdown pygments
-python3 scripts/clean_transcript.py ders.vtt > ders.txt
-python3 scripts/build_pdf.py not.md -o not.pdf
+python3 scripts/clean_transcript.py ders.vtt > ders.txt                 # VTT/SRT → düz metin
+python3 scripts/save_note.py not.md --kok ders-notlari \
+        --kurs-aciklama "..."                                           # depoya kaydet (MD + PDF + dizin)
+python3 scripts/build_pdf.py not.md -o not.pdf                          # yalnızca PDF
+```
+
+## Dosyalar
+
+```
+SKILL.md                    # Claude'a talimatlar: not formatı, yazım kuralları, kayıt akışı
+scripts/clean_transcript.py # Zaman damgası ve tekrar eden satırları temizler
+scripts/save_note.py        # Not deposuna kaydeder, INDEX.md / kurs.json / README.md üretir
+scripts/build_pdf.py        # Markdown → PDF (WeasyPrint, yoksa headless Chrome)
+assets/themes/akademik.css  # Tufte tarzı tema: fildişi kâğıt, EB Garamond, kenar notları
+assets/fonts/               # EB Garamond, Inter, JetBrains Mono (OFL, Türkçe karakterli)
+examples/                   # Örnek transkript, notlar ve örnek not deposu
 ```
 
 ## Not

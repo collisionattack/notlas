@@ -2,7 +2,7 @@
 """Ders notu Markdown dosyasını shadcn/ui görünümlü, kapaklı ve içindekilerli bir PDF'e çevirir.
 
 Kullanım:
-    python3 build_pdf.py not.md [-o cikti.pdf] [--no-toc] [--html]
+    python3 build_pdf.py not.md [-o cikti.pdf] [-t tema] [--no-toc] [--html]
 
 Markdown dosyası isteğe bağlı bir YAML ön bloğuyla başlayabilir:
     ---
@@ -33,7 +33,8 @@ except ImportError:
 
 HERE = Path(__file__).resolve().parent
 ASSETS = HERE.parent / "assets"
-CSS_PATH = ASSETS / "style.css"
+THEMES_DIR = ASSETS / "themes"
+VARSAYILAN_TEMA = "akademik"
 FONTS_DIR = ASSETS / "fonts"
 AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz",
          "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -140,7 +141,7 @@ def _marker(p: str):
     return None
 
 
-def render_html(md_text: str, meta: dict, toc: bool) -> str:
+def render_html(md_text: str, meta: dict, toc: bool, tema: str = VARSAYILAN_TEMA) -> str:
     md = markdown.Markdown(
         extensions=["extra", "sane_lists", "toc", "codehilite"],
         extension_configs={
@@ -160,20 +161,39 @@ def render_html(md_text: str, meta: dict, toc: bool) -> str:
     tarih = f"{bugun.day} {AYLAR[bugun.month - 1]} {bugun.year}"
     e = html.escape
 
+    # "Ders 18 - List Comprehension" → numara "18", başlık "List Comprehension"
+    nm = re.match(r"^\s*(?:Ders|Lecture|Bölüm)?\s*(\d+)\s*[-–—:.]\s*(.+)$", ders, re.I)
+    ders_no, ders_baslik = (nm.group(1), nm.group(2)) if nm else ("", ders)
+    bm = re.match(r"^\s*(?:Bölüm|Section)?\s*(\d+)\s*[-–—:.]\s*(.+)$", bolum, re.I)
+    bolum_no, bolum_baslik = (bm.group(1), bm.group(2)) if bm else ("", bolum)
+
     meta_cells = "".join(
         f'<div><span class="k">{k}</span><span class="v">{e(v)}</span></div>'
         for k, v in [("Kurs", kurs), ("Bölüm", bolum), ("Tarih", tarih)] if v)
     cover = (
-        '<section class="cover">'
-        '<div class="badge-row"><span class="badge solid">Ders Notu</span></div>'
+        '<section class="cover"><div class="cover-art"></div>'
+        f'<div class="cover-top"><span class="badge">Ders Notu</span>'
+        f'<span class="cover-date">{tarih}</span></div>'
+        '<div class="cover-main">'
+        + (f'<div class="cover-num"><span class="lbl">Ders</span>{e(ders_no)}</div>' if ders_no else "")
         + (f'<div class="eyebrow">{e(kurs)}</div>' if kurs else "")
-        + f'<h1 class="title">{e(ders)}</h1>'
-        + (f'<div class="desc">{e(bolum)}</div>' if bolum else "")
-        + '<div class="separator"></div>'
+        + f'<h1 class="title">{e(ders_baslik)}</h1>'
+        + (f'<div class="desc">{"<b>Bölüm " + e(bolum_no) + "</b> · " if bolum_no else ""}{e(bolum_baslik)}</div>'
+           if bolum else "")
+        + '</div><div class="separator"></div>'
         + f'<div class="meta">{meta_cells}</div>'
         + '<div class="foot">Ders transkriptinden derlenmiştir · Kişisel kullanım içindir</div>'
-        '</section>'
+        '<span class="s-ders">' + e(ders) + '</span></section>'
     )
+
+    YAN = {"ozet", "onemli-kavramlar", "dikkat-edilmesi-gerekenler", "tekrar-sorulari"}
+    konular = [re.sub("<[^>]+>", "", t) for i, t in re.findall(r'<h2 id="([^"]*)">(.*?)</h2>', body, re.S)
+               if i not in YAN]
+    if konular:
+        lis = "".join(f'<li><span>{n:02d}</span>{e(k)}</li>' for n, k in enumerate(konular[:12], 1))
+        cover = cover.replace('</div><div class="separator">',
+                              '</div><div class="cover-topics"><div class="ct-head">cat konular.txt</div>'
+                              f'<ol>{lis}</ol></div><div class="separator">', 1)
 
     toc_html = ""
     if toc and body.count("<h2") + body.count("<h1") >= 4:
@@ -183,15 +203,44 @@ def render_html(md_text: str, meta: dict, toc: bool) -> str:
                     f'<div class="toc-list">{toc_list}</div>'
                     '</div></section>')
 
-    pyg_css = HtmlFormatter(style="github-dark").get_style_defs(".codehilite")
-    css = CSS_PATH.read_text(encoding="utf-8").replace("{{FONTS}}", FONTS_DIR.as_uri())
+    css = theme_css(tema)
+    pm = re.search(r"pygments:\s*([\w-]+)", css)
+    pyg_css = HtmlFormatter(style=pm.group(1) if pm else "github-dark").get_style_defs(".codehilite")
     return (
-        '<!doctype html><html lang="tr"><head><meta charset="utf-8">'
-        f"<title>{e(ders)}</title><style>{css}\n{pyg_css}\n"
-        ".codehilite{background:transparent!important}.codehilite pre{color:#e6edf3}"
+        f'<!doctype html><html lang="tr" class="tema-{e(tema)}"><head><meta charset="utf-8">'
+        f"<title>{e(ders)}</title><style>{font_faces()}\n{pyg_css}\n"
+        f".codehilite{{background:transparent!important}}\n{css}"
         "</style></head><body>"
         f'{cover}{toc_html}<main class="content">{body}</main></body></html>'
     )
+
+
+FAMILIES = {"inter": "Inter", "eb-garamond": "EB Garamond",
+            "jetbrains-mono": "JetBrains Mono"}
+
+def font_faces() -> str:
+    """assets/fonts içindeki <aile>-<ağırlık>-<stil>.woff2 dosyalarından @font-face üretir.
+    Her dosya Latin + Latin Extended (Türkçe) karakterleri birlikte içerir."""
+    rules = []
+    for f in sorted(FONTS_DIR.glob("*.woff2")):
+        m = re.match(r"^(.+?)-(\d{3})-(normal|italic)$", f.stem)
+        if not m or m.group(1) not in FAMILIES:
+            continue
+        fam, w, st = m.groups()
+        rules.append(f'@font-face{{font-family:"{FAMILIES[fam]}";font-weight:{w};font-style:{st};'
+                     f'src:url("{f.as_uri()}");}}')
+    return "\n".join(rules)
+
+
+def theme_css(tema: str) -> str:
+    path = THEMES_DIR / f"{tema}.css"
+    if not path.exists():
+        mevcut = ", ".join(sorted(p.stem for p in THEMES_DIR.glob("*.css")))
+        sys.exit(f"Tema bulunamadı: {tema}. Mevcut temalar: {mevcut}")
+    css = path.read_text(encoding="utf-8")
+    if "uses: base" in css:
+        css = (THEMES_DIR / "_base.css").read_text(encoding="utf-8") + "\n" + css
+    return css
 
 
 def pdf_weasyprint(html_str: str, out: Path) -> bool:
@@ -222,6 +271,8 @@ def main():
     ap = argparse.ArgumentParser(description="Ders notu Markdown → PDF")
     ap.add_argument("markdown_file")
     ap.add_argument("-o", "--output")
+    ap.add_argument("-t", "--tema", default=VARSAYILAN_TEMA,
+                    help="Tema (assets/themes/*.css); varsayılan: akademik")
     ap.add_argument("--no-toc", action="store_true", help="İçindekiler sayfası ekleme")
     ap.add_argument("--html", action="store_true", help="Ara HTML dosyasını da kaydet")
     a = ap.parse_args()
@@ -229,7 +280,7 @@ def main():
     src = Path(a.markdown_file)
     out = Path(a.output) if a.output else src.with_suffix(".pdf")
     meta, md_text = split_front_matter(src.read_text(encoding="utf-8"))
-    html_str = render_html(md_text, meta, toc=not a.no_toc)
+    html_str = render_html(md_text, meta, toc=not a.no_toc, tema=a.tema)
 
     if a.html:
         out.with_suffix(".html").write_text(html_str, encoding="utf-8")
