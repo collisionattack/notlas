@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""VTT / SRT / zaman damgalı transkripti düz, okunur metne çevirir.
+"""Convert a VTT / SRT / timestamped transcript into plain, readable paragraphs.
 
-Kullanım: python3 clean_transcript.py girdi.vtt > temiz.txt
+Usage: python3 clean_transcript.py input.vtt > clean.txt
 """
 import re
 import sys
@@ -21,12 +21,12 @@ def clean(text: str) -> str:
         if line.isdigit() or TIMING.match(line):
             continue
         line = TAGS.sub("", INLINE_TS.sub("", line)).strip()
-        if not line or line == prev:  # tekrar eden altyazı satırlarını at
+        if not line or line == prev:  # drop repeated caption lines
             continue
         lines.append(line)
         prev = line
 
-    # Satırları birleştirip cümle sonlarında paragraflara böl
+    # join lines, then split into paragraphs at sentence ends
     joined = " ".join(lines)
     joined = re.sub(r"\s+", " ", joined)
     sentences = re.split(r"(?<=[.!?])\s+", joined)
@@ -43,5 +43,5 @@ def clean(text: str) -> str:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        sys.exit("Kullanım: clean_transcript.py <dosya>")
+        sys.exit("Usage: clean_transcript.py <file>")
     print(clean(Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace")))

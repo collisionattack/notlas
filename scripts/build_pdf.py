@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Ders notu Markdown dosyasını shadcn/ui görünümlü, kapaklı ve içindekilerli bir PDF'e çevirir.
+"""Render a lecture-note Markdown file to a PDF with cover page and table of contents.
 
-Kullanım:
-    python3 build_pdf.py not.md [-o cikti.pdf] [-t tema] [--no-toc] [--html]
+Usage:
+    python3 build_pdf.py note.md [-o out.pdf] [-t theme] [--no-toc] [--html]
 
-Markdown dosyası isteğe bağlı bir YAML ön bloğuyla başlayabilir:
+The Markdown file may start with a YAML front-matter block:
     ---
-    kurs: "Kurs Adı"
-    bolum: "Bölüm 3 - ..."
-    ders: "Ders 12 - ..."
+    kurs: "Course name"
+    bolum: "Bölüm 3 - Section name"
+    ders: "Ders 12 - Lecture name"
     ---
 
-Uyarı kutuları: '> ⚠️ ...' (Dikkat), '> 💡 ...' (İpucu / 'Ek not:'), '> ℹ️ ...' (Not).
-PDF motoru: WeasyPrint (tercih edilen), yoksa headless Chrome/Chromium.
+Callouts: '> ⚠️ ...' (Dikkat), '> 💡 ...' (İpucu; '> 💡 Ek not: ...' sets the title), '> ℹ️ ...' (Not).
+PDF engine: WeasyPrint (preferred), otherwise headless Chrome / Chromium / Edge.
 """
 import argparse
 import datetime as dt
@@ -29,7 +29,7 @@ try:
     import markdown
     from pygments.formatters import HtmlFormatter
 except ImportError:
-    sys.exit("Eksik paket: pip install markdown pygments weasyprint")
+    sys.exit("Missing package: pip install markdown pygments weasyprint")
 
 HERE = Path(__file__).resolve().parent
 ASSETS = HERE.parent / "assets"
@@ -61,14 +61,24 @@ def slugify(value, separator="-"):
     return re.sub(rf"[{separator}\s]+", separator, value)
 
 
+def _yaml_scalar(v: str) -> str:
+    """Parse a simple YAML scalar: strips only the outer matching quotes, keeps inner ones."""
+    v = v.strip()
+    if len(v) >= 2 and v[0] == v[-1] == '"':
+        return v[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+    if len(v) >= 2 and v[0] == v[-1] == "'":
+        return v[1:-1].replace("''", "'")
+    return v
+
+
 def split_front_matter(text: str):
     meta = {}
     m = re.match(r"^﻿?---\s*\n(.*?)\n---\s*\n", text, re.S)
     if m:
         for line in m.group(1).splitlines():
-            if ":" in line:
+            if ":" in line and not line.lstrip().startswith("#"):
                 k, v = line.split(":", 1)
-                meta[slugify(k.strip()).replace("-", "_")] = v.strip().strip('"').strip("'")
+                meta[slugify(k.strip()).replace("-", "_")] = _yaml_scalar(v)
         text = text[m.end():]
     return meta, text
 
@@ -236,7 +246,7 @@ def theme_css(tema: str) -> str:
     path = THEMES_DIR / f"{tema}.css"
     if not path.exists():
         mevcut = ", ".join(sorted(p.stem for p in THEMES_DIR.glob("*.css")))
-        sys.exit(f"Tema bulunamadı: {tema}. Mevcut temalar: {mevcut}")
+        sys.exit(f"Theme not found: {tema}. Available: {mevcut}")
     css = path.read_text(encoding="utf-8")
     if "uses: base" in css:
         css = (THEMES_DIR / "_base.css").read_text(encoding="utf-8") + "\n" + css
@@ -247,7 +257,7 @@ def pdf_weasyprint(html_str: str, out: Path) -> bool:
     try:
         from weasyprint import HTML
     except Exception as exc:  # paket yok veya sistem kütüphanesi (pango) eksik
-        print(f"WeasyPrint kullanılamıyor ({type(exc).__name__}: {exc}); Chrome deneniyor.", file=sys.stderr)
+        print(f"WeasyPrint unavailable ({type(exc).__name__}: {exc}); trying Chrome.", file=sys.stderr)
         return False
     HTML(string=html_str, base_url=str(ASSETS)).write_pdf(str(out))
     return True
@@ -277,13 +287,13 @@ def pdf_chrome(html_str: str, out: Path) -> bool:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Ders notu Markdown → PDF")
+    ap = argparse.ArgumentParser(description="Lecture note Markdown → PDF")
     ap.add_argument("markdown_file")
     ap.add_argument("-o", "--output")
     ap.add_argument("-t", "--tema", default=VARSAYILAN_TEMA,
-                    help="Tema (assets/themes/*.css); varsayılan: akademik")
-    ap.add_argument("--no-toc", action="store_true", help="İçindekiler sayfası ekleme")
-    ap.add_argument("--html", action="store_true", help="Ara HTML dosyasını da kaydet")
+                    help="Theme name (assets/themes/*.css); default: akademik")
+    ap.add_argument("--no-toc", action="store_true", help="Skip the table-of-contents page")
+    ap.add_argument("--html", action="store_true", help="Also save the intermediate HTML")
     a = ap.parse_args()
 
     src = Path(a.markdown_file)
@@ -299,8 +309,8 @@ def main():
     elif pdf_chrome(html_str, out):
         engine = "Chrome"
     else:
-        sys.exit("PDF motoru bulunamadı: `pip install weasyprint` kurun veya Chrome yükleyin.")
-    print(f"PDF oluşturuldu ({engine}): {out}")
+        sys.exit("No PDF engine found: install WeasyPrint (pip install weasyprint) or Google Chrome.")
+    print(f"PDF created ({engine}): {out}")
 
 
 if __name__ == "__main__":
