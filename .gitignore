@@ -5,3 +5,6 @@ __pycache__/
 
 /lecture-notes/
 /transcripts/
+
+# Files the remote tools could not delete (safe to remove)
+/_to_delete/
