@@ -75,7 +75,9 @@ Kurallar:
 ## 3. Not deposuna kaydet (MD + PDF)
 
 ```bash
-pip install --break-system-packages -q weasyprint markdown pygments 2>/dev/null
+pip install -q weasyprint markdown pygments 2>/dev/null \
+  || pip install --break-system-packages -q weasyprint markdown pygments 2>/dev/null \
+  || pip3 install --user -q weasyprint markdown pygments
 python3 scripts/save_note.py not.md --kok <kök-klasör> [--kurs-aciklama "..."]
 # birden fazla ders: python3 scripts/save_note.py ders14.md ders15.md --kok <kök>
 ```
@@ -95,6 +97,8 @@ Betik şu yapıyı oluşturur veya günceller:
 ```
 
 Aynı ders yeniden kaydedilirse dosyaların üzerine yazılır ve dizindeki kaydı güncellenir.
+
+Betikleri `python3 -I` ile çalıştırma: izole mod kullanıcı klasörüne kurulan paketleri (`pip install --user`) görmez ve PDF üretilemez. macOS'ta WeasyPrint sistem kütüphanesi ister (`brew install pango`); kurulu değilse betik otomatik olarak yüklü Chrome/Edge'e geçer.
 
 **Kök klasör nerede olmalı:**
 - Kullanıcı bir yol söylediyse onu kullan.

@@ -246,16 +246,25 @@ def theme_css(tema: str) -> str:
 def pdf_weasyprint(html_str: str, out: Path) -> bool:
     try:
         from weasyprint import HTML
-    except Exception:
+    except Exception as exc:  # paket yok veya sistem kütüphanesi (pango) eksik
+        print(f"WeasyPrint kullanılamıyor ({type(exc).__name__}: {exc}); Chrome deneniyor.", file=sys.stderr)
         return False
     HTML(string=html_str, base_url=str(ASSETS)).write_pdf(str(out))
     return True
 
 
 def pdf_chrome(html_str: str, out: Path) -> bool:
-    exe = next((shutil.which(n) for n in
-                ["google-chrome", "chromium", "chromium-browser", "chrome", "msedge"]
-                if shutil.which(n)), None)
+    adaylar = [shutil.which(n) for n in
+               ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome", "msedge"]]
+    adaylar += [  # macOS ve Windows'ta tarayıcılar PATH'te olmaz
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    ]
+    exe = next((a for a in adaylar if a and Path(a).exists()), None)
     if not exe:
         return False
     with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
