@@ -1,0 +1,50 @@
+@page {
+  size: A4;
+  margin: 22mm 20mm 22mm 20mm;
+  @bottom-center { content: counter(page) " / " counter(pages); font-size: 8.5pt; color: #8a8f98; }
+  @top-right { content: string(kurs); font-size: 8pt; color: #8a8f98; }
+}
+@page :first { @top-right { content: none; } @bottom-center { content: none; } }
+
+:root { --ink: #1d2230; --muted: #5b6272; --accent: #a435f0; --soft: #f5f0fb; --line: #e3e5ea; }
+
+html { font-family: "DejaVu Sans", "Noto Sans", "Segoe UI", Arial, sans-serif; font-size: 10.5pt; color: var(--ink); line-height: 1.55; }
+body { margin: 0; }
+
+.cover { page-break-after: always; height: 240mm; display: flex; flex-direction: column; justify-content: center; border-left: 6px solid var(--accent); padding-left: 14mm; }
+.cover .kurs { string-set: kurs content(); font-size: 11pt; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: bold; }
+.cover .bolum { font-size: 12pt; color: var(--muted); margin-top: 6mm; }
+.cover .ders { font-size: 26pt; font-weight: bold; line-height: 1.2; margin-top: 3mm; }
+.cover .tarih { font-size: 9pt; color: var(--muted); margin-top: 14mm; }
+
+.toc { page-break-after: always; }
+.toc h2 { border: none; }
+.toc ul { list-style: none; padding-left: 0; }
+.toc ul ul { padding-left: 6mm; }
+.toc li { margin: 1.2mm 0; }
+.toc a { color: var(--ink); text-decoration: none; }
+.toc a::after { content: leader(".") target-counter(attr(href), page); color: var(--muted); }
+
+h1 { font-size: 19pt; color: var(--ink); margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid var(--accent); page-break-before: always; }
+.content > h1:first-child { page-break-before: avoid; }
+h2 { font-size: 14pt; margin: 7mm 0 2.5mm; padding-bottom: 1mm; border-bottom: 1px solid var(--line); page-break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 5mm 0 2mm; color: #2c3245; page-break-after: avoid; }
+p { margin: 0 0 2.6mm; text-align: justify; hyphens: auto; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+li { margin: .8mm 0; }
+strong { color: #111; }
+a { color: var(--accent); }
+
+blockquote { margin: 3mm 0; padding: 2.5mm 4mm; background: var(--soft); border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0; page-break-inside: avoid; }
+blockquote p { margin: 0; text-align: left; }
+
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 4mm; font-size: 9.5pt; page-break-inside: auto; }
+th { background: #f0f1f4; text-align: left; font-weight: bold; }
+th, td { border: 1px solid var(--line); padding: 1.6mm 2.4mm; vertical-align: top; }
+tr { page-break-inside: avoid; }
+
+code { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.8pt; background: #f1f2f5; padding: .2mm 1mm; border-radius: 2px; }
+pre { background: #f7f8fa; border: 1px solid var(--line); border-radius: 4px; padding: 3mm; white-space: pre-wrap; word-wrap: break-word; line-height: 1.4; margin: 2mm 0 4mm; }
+pre code { background: none; padding: 0; font-size: 8.5pt; }
+.codehilite { margin: 2mm 0 4mm; }
+.codehilite pre { margin: 0; }
