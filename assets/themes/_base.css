@@ -21,8 +21,10 @@ li { margin: 1mm 0; }
 .cover .meta div { flex: 1; }
 .cover .meta .k, .cover .meta .v { display: block; }
 .cover .foot { margin-top: auto; }
+/* Running-header strings come from hidden spans in normal flow
+   (string-set is ignored on elements inside absolutely positioned boxes). */
 .s-lecture { string-set: lecture content(); display: block; height: 0; overflow: hidden; font-size: 0; }
-.cover .eyebrow { string-set: course content(); }
+.s-course { string-set: course content(); display: block; height: 0; overflow: hidden; font-size: 0; }
 
 /* Table of contents */
 .toc { page-break-after: always; }

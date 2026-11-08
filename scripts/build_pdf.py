@@ -183,6 +183,9 @@ def render_html(md_text: str, meta: dict, toc: bool, theme: str = DEFAULT_THEME)
     bm = re.match(r"^\s*(?:Bölüm|Section)?\s*(\d+)\s*[-–—:.]\s*(.+)$", section, re.I)
     section_no, section_title = (bm.group(1), bm.group(2)) if bm else ("", section)
 
+    # smaller cover title for long lecture names, so the cover never spills onto a second page
+    title_size = " xlong" if len(lecture_title) > 80 else (" long" if len(lecture_title) > 45 else "")
+
     meta_cells = "".join(
         f'<div><span class="k">{k}</span><span class="v">{e(v)}</span></div>'
         for k, v in [("Kurs", course), ("Bölüm", section), ("Tarih", date_str)] if v)
@@ -190,16 +193,17 @@ def render_html(md_text: str, meta: dict, toc: bool, theme: str = DEFAULT_THEME)
         '<section class="cover"><div class="cover-art"></div>'
         f'<div class="cover-top"><span class="badge">Ders Notu</span>'
         f'<span class="cover-date">{date_str}</span></div>'
-        '<div class="cover-main">'
+        '<div class="cover-center"><div class="cover-main">'
         + (f'<div class="cover-num"><span class="lbl">Ders</span>{e(lecture_no)}</div>' if lecture_no else "")
         + (f'<div class="eyebrow">{e(course)}</div>' if course else "")
-        + f'<h1 class="title">{e(lecture_title)}</h1>'
+        + f'<h1 class="title{title_size}">{e(lecture_title)}</h1>'
         + (f'<div class="desc">{"<b>Bölüm " + e(section_no) + "</b> · " if section_no else ""}{e(section_title)}</div>'
            if section else "")
         + '</div><div class="separator"></div>'
-        + f'<div class="meta">{meta_cells}</div>'
+        + f'<div class="meta">{meta_cells}</div></div>'
         + '<div class="foot">Ders transkriptinden derlenmiştir · Kişisel kullanım içindir</div>'
-        '<span class="s-lecture">' + e(lecture) + '</span></section>'
+        '<span class="s-lecture">' + e(lecture) + '</span>'
+        '<span class="s-course">' + e(course) + '</span></section>'
     )
 
     toc_html = ""

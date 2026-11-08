@@ -11,6 +11,7 @@ Notes are written in Turkish; technical terms keep their original English in par
 1. You give Claude a transcript plus the course name and section/lecture titles (and optionally the course description).
 2. Claude re-teaches the lecture as a Markdown note: summary, topic sections, runnable code, a concept table, pitfalls and review questions.
 3. `scripts/save_note.py` validates the note, stores it in the repository, renders the PDF and rebuilds the indexes.
+4. Claude shows the result right away: a preview image of the cover and first pages, plus the PDF.
 
 ## Notes repository
 
@@ -73,6 +74,7 @@ python3 scripts/save_note.py note.md --root courses \
 python3 scripts/save_note.py --list-courses --root courses       # existing courses
 python3 scripts/save_note.py --reindex --root courses [--prune]  # rebuild indexes from disk
 python3 scripts/build_pdf.py note.md -o note.pdf                      # PDF only
+python3 scripts/preview.py note.pdf -o preview.png                   # cover + first pages as one image
 ```
 
 `save_note.py` refuses misspelled section headings, course names that look like an existing course, and saves that would replace a different lecture; each check names the flag that overrides it. If PDF rendering fails, the note and indexes are still saved and a warning explains why.
@@ -87,6 +89,7 @@ CLAUDE.md                   # project-folder workflow
 scripts/clean_transcript.py # strips timestamps and repeated caption lines
 scripts/save_note.py        # validates and stores notes, builds INDEX.md / course.json / README.md
 scripts/build_pdf.py        # Markdown → PDF
+scripts/preview.py          # PDF → preview image shown after each save
 assets/themes/academic.css  # Tufte-style theme: ivory paper, EB Garamond, margin notes
 assets/fonts/               # EB Garamond, Inter, JetBrains Mono (SIL OFL, full Turkish coverage)
 docs/preview.png            # sample output shown above

@@ -175,11 +175,18 @@ Other commands: `--reindex --root <root> [--course <slug>]` rebuilds indexes fro
 
 PDF rendering uses WeasyPrint, with a fallback to installed Chrome/Edge. On macOS, WeasyPrint needs `brew install pango`; without it the script falls back to Chrome automatically. If every engine fails, the script prints a `WARNING ... PDF not created (...)` line but still saves the Markdown and updates the indexes. Tell the user the PDF is missing and quote the reason.
 
-## 5. Check and report
+## 5. Preview, check and show the result
 
-Check the PDF once with whatever is available:
-- If you can render pages to images (e.g. `pdftoppm -r 60 -f 1 -l 3 file.pdf out`), look at the cover and the first content pages: Turkish characters, code blocks, tables, margin notes.
-- Otherwise run `pdftotext file.pdf - | head -40` and confirm the Turkish characters (ç ğ ı İ ö ş ü) come through.
-- If neither tool exists, skip the check.
+Always show the result without being asked; the user should never have to request a preview.
 
-Then reply in one or two sentences: which lecture was saved, where, and the course's lecture count. Do not paste the note's content into the chat. If you made an assumption (course name, lecture split, missing section number), say so in one line.
+1. **Render a preview image** of each saved PDF (cover and the first content pages side by side). Write it to the scratch location (Notlas project: `transcripts/`), never into `<root>`:
+   ```bash
+   python3 <skill>/scripts/preview.py <root>/<course>/pdf/<section>/<lecture>.pdf -o <scratch>/<lecture>-preview.png
+   ```
+   If it exits with code 2 (no rasterizer available), skip the image and run `pdftotext <pdf> - | head -40` instead to confirm the Turkish characters (ç ğ ı İ ö ş ü) come through.
+2. **Look at the preview yourself** before showing it: text running off the page or overlapping, missing Turkish characters, broken code blocks or tables. If something is wrong, fix the note and save it again, then re-render the preview.
+3. **Show it in the final reply**, using what the environment offers:
+   - In a chat app with a tool for sending or presenting files to the user: send the preview PNG (it displays inline) and the PDF itself (so it opens in the viewer). For several lectures, send every PDF and the preview of the first one.
+   - In Claude Code: print the absolute paths of the PDF and the preview, since the desktop app makes them clickable. On macOS, also open the PDF with `open "<pdf>"`, unless the user said not to.
+   - If no preview could be made, still send or open the PDF.
+4. **Reply in one or two sentences:** which lecture was saved, where, and the course's lecture count. Do not paste the note's content into the chat. If you made an assumption (course name, lecture split, missing section number), say so in one line.

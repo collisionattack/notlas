@@ -19,24 +19,31 @@
 @page :first { margin: 0; @top-left { content: none; } @top-right { content: none; } }
 
 /* ---------- Cover ---------- */
-.cover { background: #fffff8; padding: 40mm 30mm 26mm; text-align: center; }
+/* Top bar at the top, footer at the bottom, and the main block centred on the page.
+   Every text block can wrap, so long course/section/lecture names never leave the page. */
+.cover { background: #fffff8; padding: 32mm 30mm 24mm; text-align: center; }
 .cover .cover-art { inset: 14mm; border: .6pt solid #cfcab8; }
 .cover .cover-top { justify-content: center; gap: 4mm; font: italic 400 10pt var(--font-head); color: var(--muted-fg); }
 .cover .badge { font: 600 7pt var(--font-label); letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
 .cover .cover-date::before { content: "·"; margin-right: 4mm; }
-.cover .cover-main { margin-top: 72mm; }
-.cover .cover-num { font: italic 400 15pt var(--font-head); color: var(--accent); margin-bottom: 8mm; }
+.cover .cover-center { position: absolute; left: 30mm; right: 30mm; top: 50%; transform: translateY(-50%); }
+.cover .cover-num { font: italic 400 15pt var(--font-head); color: var(--accent); margin-bottom: 7mm; }
 .cover .cover-num .lbl { margin-right: 2mm; }
-.cover .eyebrow { font: 400 11pt var(--font-head); letter-spacing: .24em; text-transform: uppercase; color: var(--muted-fg); margin-bottom: 6mm; }
-.cover h1.title { font: italic 400 38pt/1.08 var(--font-head); color: var(--fg); }
-.cover .desc { font: 400 13pt var(--font-head); color: var(--muted-fg); margin-top: 7mm; }
+.cover .eyebrow { font: 400 11pt/1.5 var(--font-head); letter-spacing: .2em; text-transform: uppercase; color: var(--muted-fg); margin-bottom: 6mm; }
+.cover h1.title { font: italic 400 38pt/1.08 var(--font-head); color: var(--fg); overflow-wrap: break-word; }
+.cover h1.title.long { font-size: 30pt; }
+.cover h1.title.xlong { font-size: 24pt; line-height: 1.15; }
+.cover .desc { font: 400 13pt/1.4 var(--font-head); color: var(--muted-fg); margin-top: 7mm; }
 .cover .desc b { font-weight: 400; font-variant: small-caps; letter-spacing: .06em; }
-.cover .separator { width: 30mm; height: 0; border-top: .6pt solid var(--fg); margin: 14mm auto 10mm; }
-.cover .meta { justify-content: center; gap: 12mm; }
-.cover .meta div { flex: none; }
-.cover .meta .k { font: italic 400 9.5pt var(--font-head); color: var(--muted-fg); }
-.cover .meta .v { font: 400 11pt var(--font-head); }
-.cover > .foot { position: absolute; left: 0; right: 0; bottom: 26mm; font: italic 400 9.5pt var(--font-head); color: var(--muted-fg); }
+.cover .separator { width: 30mm; height: 0; border-top: .6pt solid var(--fg); margin: 12mm auto 8mm; }
+/* Course / section / date: a fixed three-column row whose cells wrap instead of overflowing */
+.cover .meta { display: table; table-layout: fixed; width: 100%; border-collapse: collapse; }
+.cover .meta div { display: table-cell; vertical-align: top; padding: 0 3mm; overflow-wrap: break-word; }
+.cover .meta div:first-child, .cover .meta div:nth-child(2) { width: 39%; }
+.cover .meta div:last-child { white-space: nowrap; }  /* the date never wraps */
+.cover .meta .k { font: italic 400 9.5pt var(--font-head); color: var(--muted-fg); margin-bottom: .8mm; }
+.cover .meta .v { font: 400 10.5pt/1.35 var(--font-head); }
+.cover > .foot { position: absolute; left: 30mm; right: 30mm; bottom: 24mm; font: italic 400 9.5pt var(--font-head); color: var(--muted-fg); }
 
 /* ---------- Table of contents ---------- */
 .toc h2 { font: italic 400 24pt var(--font-head); margin: 0 0 1mm; }
@@ -63,7 +70,7 @@ h2#ozet + p { font-size: 13pt; line-height: 1.5; margin-bottom: 8mm; }
 h2#ozet + p::first-line { font-variant: small-caps; letter-spacing: .04em; }
 
 /* ---------- Code ---------- */
-code { font-size: 8.8pt; color: #333; }
+code { font-size: 8.8pt; color: #333; overflow-wrap: anywhere; }
 .code-block { border-left: 1.2pt solid var(--rule); padding-left: 1mm; margin-right: -46mm; }
 .code-block .code-title { position: absolute; display: none; }
 pre { padding: 1.5mm 4mm; color: #222; }
@@ -75,16 +82,17 @@ thead th { font: 400 10.5pt var(--font-head); font-variant: small-caps; letter-s
 tbody td { padding: 1.6mm 3mm 1.6mm 0; }
 tbody td:first-child { font-style: italic; }
 td code { font-size: 8.2pt; }
+td, th { overflow-wrap: anywhere; }
 
 /* ---------- Marginal notes: alerts move into the right margin ---------- */
 .alert {
   float: right; clear: right; width: 46mm; margin: 0 -56mm 3mm 0;
-  display: block; font: 400 9.5pt/1.4 var(--font-body); color: #333;
+  display: block; font: 400 9.5pt/1.4 var(--font-body); color: #333; overflow-wrap: anywhere;
 }
 .alert .icon { display: none; }
 .alert .alert-title { font: 600 6.8pt var(--font-label); letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 1mm; }
 .alert.tip .alert-title { color: #5a6b2e; }
-.alert .alert-desc code { font-size: 7.6pt; }
+.alert .alert-desc code { font-size: 7.6pt; overflow-wrap: anywhere; }
 blockquote { margin: 4mm 6mm; font-style: italic; }
 
 /* Alerts inside the "Dikkat Edilmesi Gerekenler" section stay inline */

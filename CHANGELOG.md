@@ -1,6 +1,17 @@
 # Changelog
 
-## v1.0.0 — 2026-11-08
+## Unreleased
+
+### Fixed
+
+- **Cover layout with long texts.** Long course, section or lecture names no longer run off the cover: the course / section / date row is a fixed three-column row whose cells wrap, the date stays on one line, long lecture titles get a smaller cover font, and the cover block is vertically centred.
+- **Long inline code** (identifiers in margin notes, table cells and body text) wraps inside its column instead of leaving the page; short identifiers are not split.
+
+### Added
+
+- **Automatic preview.** After each save Claude renders the cover and first content pages into one image (`scripts/preview.py`), checks it, and shows it together with the PDF without being asked. In Claude Code on macOS the PDF is also opened directly.
+
+## v0.1.0 — 2026-11-08
 
 First public release of **Notlas** (*not + atlas*), a Claude skill that turns course lecture transcripts into structured Turkish study notes, saved as an academic-style PDF for reading and as Markdown in an indexed repository that AI agents can use as a knowledge source.
 

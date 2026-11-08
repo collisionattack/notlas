@@ -7,7 +7,8 @@ This folder is both the **source of the Notlas skill** and the user's **personal
 When the user shares a lecture transcript (pasted, attached, or dropped into `transcripts/`), follow `SKILL.md` in this folder. In this project:
 
 - The repository root is always `courses/` (pass `--root courses`).
-- Read transcripts from `transcripts/` and write cleaned text and note drafts there too. Never write drafts into `courses/`.
+- Read transcripts from `transcripts/` and write cleaned text, note drafts and preview images there too. Never write drafts or previews into `courses/`.
+- After saving, open the PDF with `open "<pdf>"` (macOS) and print the paths of the PDF and its preview.
 - Run the scripts from this folder: `python3 scripts/save_note.py transcripts/<note>.md --root courses`.
 
 ## Folders
