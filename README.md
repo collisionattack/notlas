@@ -32,7 +32,8 @@ ya da `/udemy-ders-notu` yaz.
 SKILL.md                    # Claude'a talimatlar: not formatı, yazım kuralları, akış
 scripts/clean_transcript.py # VTT/SRT → düz metin (zaman damgası ve tekrarları temizler)
 scripts/build_pdf.py        # Markdown → PDF (WeasyPrint, yoksa headless Chrome)
-assets/style.css            # PDF görünümü (A4, kapak, içindekiler, kod renklendirme)
+assets/style.css            # PDF teması: shadcn/ui (zinc) görünümü, A4, kapak, içindekiler
+assets/fonts/               # Inter + Geist Mono (OFL lisanslı, Türkçe karakter destekli)
 examples/                   # Örnek transkript, not ve PDF
 ```
 
