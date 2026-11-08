@@ -4,7 +4,7 @@
 Usage:
     python3 save_note.py NOTE.md [NOTE2.md ...] --root lecture-notes [--course-description "..."]
     python3 save_note.py --list-courses --root lecture-notes
-    python3 save_note.py --reindex --root lecture-notes [--course <course-slug>]
+    python3 save_note.py --reindex --root lecture-notes [--course <course-slug>] [--prune]
 
 Repository layout (agents read the Markdown, humans read the PDFs):
 
@@ -85,12 +85,14 @@ def extract_summary(md: str) -> str:
 
 
 def extract_concepts(md: str):
+    rows = [ln.strip() for ln in section_body(md, "Önemli Kavramlar").splitlines() if ln.strip().startswith("|")]
+    is_sep = [bool(re.fullmatch(r"\|?(\s*:?-{3,}:?\s*\|)+\s*:?-*:?\s*\|?", r)) for r in rows]
     out = []
-    for line in section_body(md, "Önemli Kavramlar").splitlines():
-        if not line.strip().startswith("|"):
+    for i, row in enumerate(rows):
+        if is_sep[i] or (i + 1 < len(rows) and is_sep[i + 1]):  # separator, or the header above it
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) >= 2 and cells[0] and not set(cells[0]) <= set("-: ") and cells[0] != "Kavram":
+        cells = [c.strip() for c in row.strip("|").split("|")]
+        if len(cells) >= 2 and cells[0]:
             out.append(re.sub(r"[`*_]", "", cells[0]))
     return out
 
@@ -145,14 +147,19 @@ def lecture_entry(md_path: Path, course_dir: Path, previous: dict | None = None)
     }
 
 
-def rebuild_course(course_dir: Path, description: str = "", name: str = "") -> dict:
-    """Merge course.json with every note on disk; disk wins for files that exist locally."""
+def rebuild_course(course_dir: Path, description: str = "", name: str = "", prune: bool = False) -> dict:
+    """Merge course.json with every note on disk; disk wins for files that exist locally.
+
+    prune=True drops entries whose Markdown file is missing locally. Use it only on a complete
+    repository (never on a partial copy), e.g. after deleting or moving a lecture.
+    """
     data = load_course(course_dir, name)
     if name:
         data["course"] = name
     if description:
         data["description"] = description
-    by_md = {d["md"]: d for d in data.get("lectures", [])}
+    by_md = {d["md"]: d for d in data.get("lectures", [])
+             if not prune or (course_dir / d["md"]).exists()}
     for md in sorted((course_dir / "notes").glob("**/*.md")):
         rel = md.relative_to(course_dir).as_posix()
         by_md[rel] = lecture_entry(md, course_dir, by_md.get(rel))
@@ -279,14 +286,28 @@ def save(note: Path, root: Path, description: str = "", pdf: bool = True,
 
     pdf_ok = False
     if pdf:
-        pdf_target.parent.mkdir(parents=True, exist_ok=True)
-        html_str = build_pdf.render_html(body, meta, toc=True)
-        pdf_ok = build_pdf.pdf_weasyprint(html_str, pdf_target) or build_pdf.pdf_chrome(html_str, pdf_target)
-        if not pdf_ok:
-            print("WARNING: no PDF engine available; only the Markdown was saved.", file=sys.stderr)
+        try:
+            pdf_target.parent.mkdir(parents=True, exist_ok=True)
+            html_str = build_pdf.render_html(body, meta, toc=True)
+            engine, err = build_pdf.render_pdf(html_str, pdf_target)
+            pdf_ok = bool(engine)
+            if not pdf_ok:
+                print(f"WARNING {note.name}: PDF not created ({err}). The Markdown note and the indexes "
+                      "were still saved; install WeasyPrint (+ brew install pango on macOS) or Chrome "
+                      "and save again to add the PDF.", file=sys.stderr)
+        except Exception as exc:  # e.g. a theme/HTML problem; the note itself must still be indexed
+            print(f"WARNING {note.name}: PDF not created ({type(exc).__name__}: {exc}).", file=sys.stderr)
 
     data = rebuild_course(course_dir, description, course)
     write_root_readme(root)
+
+    # Same lecture file name in another section folder → probably moved; old copy is still listed.
+    twins = [p for p in (course_dir / "notes").glob(f"*/{file_stem}.md") if p.resolve() != md_target.resolve()]
+    if twins:
+        lst = "\n".join(f"  - {p}" for p in twins)
+        print(f"WARNING {note.name}: the same lecture also exists in another section folder:\n{lst}\n"
+              "If the lecture was moved, delete the old .md (and its .pdf under pdf/), then run "
+              f"--reindex --prune --root {root} --course {course_dir.name}.", file=sys.stderr)
     return md_target, (pdf_target if pdf_ok else None), len(data["lectures"])
 
 
@@ -302,6 +323,9 @@ def main():
     ap.add_argument("--skip-checks", action="store_true", help="Skip note-structure validation")
     ap.add_argument("--list-courses", action="store_true", help="List existing courses and exit")
     ap.add_argument("--reindex", action="store_true", help="Rebuild indexes from course.json + notes on disk")
+    ap.add_argument("--prune", action="store_true",
+                    help="With --reindex: drop index entries whose note file no longer exists "
+                         "(only on the complete repository, never on a partial copy)")
     ap.add_argument("--course", help="With --reindex: only this course folder")
     a = ap.parse_args()
     root = Path(a.root)
@@ -314,7 +338,7 @@ def main():
         dirs = [root / a.course] if a.course else [p.parent for p in root.glob("*/course.json")] + \
             [p for p in root.iterdir() if p.is_dir() and (p / "notes").is_dir() and not (p / "course.json").exists()]
         for d in sorted(set(dirs)):
-            n = len(rebuild_course(d, a.desc if a.course else "")["lectures"])
+            n = len(rebuild_course(d, a.desc if a.course else "", prune=a.prune)["lectures"])
             print(f"Reindexed {d.name}: {n} lectures")
         write_root_readme(root)
         return

@@ -14,11 +14,20 @@ TAGS = re.compile(r"<[^>]+>")
 
 def clean(text: str) -> str:
     lines, prev = [], None
-    for raw in text.splitlines():
+    raw_lines = [ln.strip() for ln in text.splitlines()]
+    next_nonempty, upcoming = [""] * len(raw_lines), ""
+    for i in range(len(raw_lines) - 1, -1, -1):  # one backward pass: next non-empty line after i
+        next_nonempty[i] = upcoming
+        if raw_lines[i]:
+            upcoming = raw_lines[i]
+    for i, raw in enumerate(raw_lines):
         line = raw.strip()
         if not line or line == "WEBVTT" or line.startswith(("NOTE", "STYLE", "Kind:", "Language:")):
             continue
-        if line.isdigit() or TIMING.match(line):
+        if TIMING.match(line):
+            continue
+        # A bare number is a cue index only when a timing line follows; otherwise it is speech ("42").
+        if line.isdigit() and TIMING.match(next_nonempty[i]):
             continue
         line = TAGS.sub("", INLINE_TS.sub("", line)).strip()
         if not line or line == prev:  # drop repeated caption lines

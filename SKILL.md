@@ -1,13 +1,13 @@
 ---
 name: notlas
-description: Turn a course lecture transcript (Udemy or any video course; pasted text or a .vtt/.srt/.txt file) into a structured Turkish study note, saved as Markdown + PDF in the user's indexed notes repository (lecture-notes/). Use when the user shares a lecture transcript and asks to make notes from it ("ders notu çıkar", "notlaştır", "bu dersi not al", "turn this transcript into notes"), asks to process transcripts in the transcripts/ folder, or types /notlas. Not for general PDF creation or summarizing other documents.
+description: Turn a course lecture transcript (Udemy or any video course; pasted text or a .vtt/.srt/.txt file) into a structured Turkish study note, saved as Markdown + PDF in the user's indexed notes repository (lecture-notes/). Use when the user shares a lecture transcript and asks to make notes from it ("ders notu çıkar", "notlaştır", "bu dersi not al", "turn this transcript into notes"), asks to process transcripts in the transcripts/ folder, or invokes /notlas (Claude Code). Not for general PDF creation or summarizing other documents.
 ---
 
 # Notlas
 
 Turn lecture transcripts into study notes that serve two readers: the user (PDF) and AI coding agents the user will later point at the notes as a knowledge source (Markdown). Notes are written **in Turkish**; these instructions are in English.
 
-Scripts live in this skill's `scripts/` folder. Run them with `python3` (never `python3 -I`: isolated mode hides user-installed packages and PDF rendering fails).
+Scripts live in the `scripts/` folder next to this `SKILL.md`. Below, `<skill>` means that folder's parent (the directory containing this file). Use its absolute path, because the working directory is usually somewhere else; inside the Notlas project folder `<skill>` is simply `.`. Run the scripts with `python3` (never `python3 -I`: isolated mode hides user-installed packages and PDF rendering fails).
 
 ## 1. Locate the notes repository
 
@@ -17,13 +17,13 @@ Decide the repository root (`<root>`) first, because later steps read from it:
 2. The working folder contains `CLAUDE.md` and `lecture-notes/` (the Notlas project folder) → `<root>` is that `lecture-notes/`.
 3. A folder on the user's computer is connected:
    - with a shell on that computer → run every script there, `<root>` = `lecture-notes/` inside the folder the user chose.
-   - with file transfer only → work on a local copy. **Before saving**, copy the course's existing `course.json` (and the root `README.md`) from the computer into the same relative paths of the local copy; afterwards copy back every file the script reports as written plus `INDEX.md`, `course.json` and `README.md`. Without the old `course.json`, the index would list only the new lecture. If you could not fetch it, run `save_note.py --reindex` on the full repository later, or tell the user.
+   - with file transfer only → work on a local copy. **Before saving**, copy **every** `<root>/*/course.json` from the computer into the same relative paths of the local copy (they are small). Afterwards copy back the new note's `.md` and `.pdf` plus the saved course's `INDEX.md` and `course.json`, and the root `README.md`. All of these are needed: without the course's `course.json` its index would list only the new lecture, and without the other courses' `course.json` files the root `README.md` would list only one course. If you could not fetch them, do not copy back `INDEX.md`, `course.json` or `README.md`; copy only the `.md` and `.pdf`, and tell the user to run `save_note.py --reindex` on the computer.
 4. None of the above (plain cloud chat) → `<root>` = `./lecture-notes/`; at the end send the user the note's `.md` and `.pdf`. Mention that indexes only cover this session's notes unless they attach their existing `course.json`.
 
 Then list existing courses:
 
 ```bash
-python3 scripts/save_note.py --list-courses --root <root>
+python3 <skill>/scripts/save_note.py --list-courses --root <root>
 ```
 
 If the lecture belongs to a listed course, use that course's name **exactly** as listed in the `course:` field. Different spellings create a second course folder.
@@ -42,7 +42,7 @@ If there is no transcript, ask for it. For anything else that is missing, make a
 If the transcript is VTT/SRT or has timestamps, clean it first. Write intermediate files to a scratch location (Notlas project: `transcripts/`; otherwise a temp folder), never into `<root>`:
 
 ```bash
-python3 scripts/clean_transcript.py <input> > <scratch>/temiz.txt
+python3 <skill>/scripts/clean_transcript.py <input> > <scratch>/temiz.txt
 ```
 
 **One transcript containing several lectures.** Split it on clear boundaries: the instructor closing a lecture ("bir sonraki derste…", "in the next lecture…"), a new welcome or intro, lecture titles, or a jump in timestamps back to 00:00. Write one note file per lecture.
@@ -122,7 +122,7 @@ pip install -q weasyprint markdown pygments 2>/dev/null \
 Save (several notes can be passed at once):
 
 ```bash
-python3 scripts/save_note.py <scratch>/note.md --root <root> [--course-description "..."]
+python3 <skill>/scripts/save_note.py <scratch>/note.md --root <root> [--course-description "..."]
 ```
 
 Pass `--course-description` on a course's first save (or when it changes).
@@ -139,9 +139,11 @@ The script validates the note, places it at `<root>/<course-slug>/notes/<NN-sect
 
 Re-saving a lecture with the same section and title updates it in place; this is expected.
 
-Other commands: `--reindex --root <root> [--course <slug>]` rebuilds indexes from the files on disk, and `--no-pdf` saves Markdown only.
+**Moving or deleting a lecture** (e.g. its section was wrong): save it with the corrected `section:`. The script warns that the same lecture also exists in the old section folder. Delete the old `.md` and its `.pdf` (ask the user first if you cannot delete files), then run `--reindex --prune` for that course. Without `--prune`, the index keeps listing the old copy.
 
-PDF rendering uses WeasyPrint, with a fallback to installed Chrome/Edge. On macOS, WeasyPrint needs `brew install pango`; without it the script falls back to Chrome automatically. If no engine is available, the Markdown is still saved: tell the user the PDF is missing and why.
+Other commands: `--reindex --root <root> [--course <slug>]` rebuilds indexes from the files on disk. Add `--prune` to drop entries whose note file no longer exists; only use it on the complete repository, never on a partial copy. `--no-pdf` saves Markdown only.
+
+PDF rendering uses WeasyPrint, with a fallback to installed Chrome/Edge. On macOS, WeasyPrint needs `brew install pango`; without it the script falls back to Chrome automatically. If every engine fails, the script prints a `WARNING ... PDF not created (...)` line but still saves the Markdown and updates the indexes. Tell the user the PDF is missing and quote the reason.
 
 ## 5. Check and report
 

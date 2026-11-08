@@ -262,8 +262,8 @@ def theme_css(theme: str) -> str:
 def pdf_weasyprint(html_str: str, out: Path) -> bool:
     try:
         from weasyprint import HTML
-    except Exception as exc:  # paket yok veya sistem kütüphanesi (pango) eksik
-        print(f"WeasyPrint unavailable ({type(exc).__name__}: {exc}); trying Chrome.", file=sys.stderr)
+    except Exception as exc:  # package missing, or system library (pango) missing
+        print(f"WeasyPrint unavailable ({type(exc).__name__}: {exc}).", file=sys.stderr)
         return False
     HTML(string=html_str, base_url=str(ASSETS)).write_pdf(str(out))
     return True
@@ -288,8 +288,24 @@ def pdf_chrome(html_str: str, out: Path) -> bool:
         tmp = f.name
     cmd = [exe, "--headless", "--disable-gpu", "--no-sandbox", "--no-pdf-header-footer",
            f"--print-to-pdf={out.resolve()}", Path(tmp).as_uri()]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+    finally:
+        Path(tmp).unlink(missing_ok=True)
     return out.exists()
+
+
+def render_pdf(html_str: str, out: Path):
+    """Try every PDF engine in turn. Never raises; returns (engine_name, None) or (None, error_text)."""
+    errors = []
+    for name, fn in (("WeasyPrint", pdf_weasyprint), ("Chrome", pdf_chrome)):
+        try:
+            if fn(html_str, out):
+                return name, None
+            errors.append(f"{name}: not available")
+        except Exception as exc:  # rendering failed (e.g. missing pango at render time, Chrome timeout)
+            errors.append(f"{name}: {type(exc).__name__}: {str(exc).strip()[:200]}")
+    return None, "; ".join(errors)
 
 
 def main():
@@ -310,12 +326,10 @@ def main():
     if a.html:
         out.with_suffix(".html").write_text(html_str, encoding="utf-8")
 
-    if pdf_weasyprint(html_str, out):
-        engine = "WeasyPrint"
-    elif pdf_chrome(html_str, out):
-        engine = "Chrome"
-    else:
-        sys.exit("No PDF engine found: install WeasyPrint (pip install weasyprint) or Google Chrome.")
+    engine, err = render_pdf(html_str, out)
+    if not engine:
+        sys.exit(f"PDF not created ({err}). Install WeasyPrint (pip install weasyprint; "
+                 "on macOS also brew install pango) or Google Chrome.")
     print(f"PDF created ({engine}): {out}")
 
 

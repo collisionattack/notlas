@@ -40,11 +40,12 @@ notlas/
 
 ## Installing the skill
 
-**Claude app:** zip this folder without `.git/`, `lecture-notes/` and `transcripts/` (or download `notlas.zip` from Releases), then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
+**Claude app:** zip this folder without `.git/`, `lecture-notes/`, `transcripts/` and `docs/` (the command is in `CLAUDE.md`), or download `notlas.zip` from Releases, then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
 
-**Claude Code:**
+**Claude Code:** link (or clone) the folder into your personal skills directory:
 ```bash
-git clone https://github.com/<user>/notlas ~/.claude/skills/notlas
+ln -s ~/path/to/notlas ~/.claude/skills/notlas          # existing clone; edits apply immediately
+git clone https://github.com/mrttyyldrm/notlas ~/.claude/skills/notlas   # or a fresh clone
 ```
 
 ## Usage
@@ -55,7 +56,7 @@ git clone https://github.com/<user>/notlas ~/.claude/skills/notlas
 >
 > Bunu ders notu yap.
 
-or type `/notlas`.
+In Claude Code you can also type `/notlas`. In the Claude app the skill is picked up automatically; if it isn't, say "use the notlas skill".
 
 ## Scripts
 
@@ -65,11 +66,11 @@ python3 scripts/clean_transcript.py lecture.vtt > lecture.txt          # VTT/SRT
 python3 scripts/save_note.py note.md --root lecture-notes \
         --course-description "..."                                    # save: MD + PDF + indexes
 python3 scripts/save_note.py --list-courses --root lecture-notes       # existing courses
-python3 scripts/save_note.py --reindex --root lecture-notes            # rebuild indexes from disk
+python3 scripts/save_note.py --reindex --root lecture-notes [--prune]  # rebuild indexes from disk
 python3 scripts/build_pdf.py note.md -o note.pdf                      # PDF only
 ```
 
-`save_note.py` refuses misspelled section headings, course names that look like an existing course, and saves that would replace a different lecture. Each check names the flag that overrides it.
+`save_note.py` refuses misspelled section headings, course names that look like an existing course, and saves that would replace a different lecture; each check names the flag that overrides it. If PDF rendering fails, the note and indexes are still saved and a warning explains why.
 
 PDF rendering uses WeasyPrint and falls back to an installed Chrome/Edge (on macOS, WeasyPrint needs `brew install pango`).
 
