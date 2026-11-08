@@ -3,6 +3,5 @@ __pycache__/
 *.html
 .DS_Store
 
-# Kişisel not deposu ve ham transkriptler (telifli içerikten türetilmiş, paylaşılmaz)
-/ders-notlari/
-/transkriptler/
+/lecture-notes/
+/transcripts/

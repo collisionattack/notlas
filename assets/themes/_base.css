@@ -1,5 +1,5 @@
-/* Temel iskelet: temalar bu dosyanın üstüne kendi değişkenlerini ve stillerini ekler.
-   Bir tema bunu kullanmak için içinde "uses: base" yorumu bulundurur. */
+/* Base skeleton: themes add their own variables and styles on top of this file.
+   A theme opts in by including a "uses: base" comment. */
 
 html { font-family: var(--font-body); font-size: var(--size-body, 10pt); line-height: var(--leading, 1.65);
        color: var(--fg); -weasy-hyphens: auto; }
@@ -10,7 +10,7 @@ a { color: inherit; }
 ul, ol { margin: 0 0 3.5mm; padding-left: 6mm; }
 li { margin: 1mm 0; }
 
-/* Kapak */
+/* Cover */
 .cover { page-break-after: always; height: 297mm; width: 210mm; box-sizing: border-box; position: relative;
          display: flex; flex-direction: column; overflow: hidden; }
 .cover .cover-art { position: absolute; inset: 0; z-index: 0; }
@@ -22,43 +22,43 @@ li { margin: 1mm 0; }
 .cover .meta .k, .cover .meta .v { display: block; }
 .cover .foot { margin-top: auto; }
 .cover .cover-topics { display: none; }
-.s-ders { string-set: ders content(); display: block; height: 0; overflow: hidden; font-size: 0; }
-.cover .eyebrow { string-set: kurs content(); }
+.s-lecture { string-set: lecture content(); display: block; height: 0; overflow: hidden; font-size: 0; }
+.cover .eyebrow { string-set: course content(); }
 
-/* İçindekiler */
+/* Table of contents */
 .toc { page-break-after: always; }
 .toc ul { list-style: none; padding-left: 0; margin: 0; }
 .toc ul ul { padding-left: 6mm; }
 .toc a { text-decoration: none; }
 .toc a::after { content: leader(" . ") target-counter(attr(href), page); }
 
-/* Başlıklar */
+/* Headings */
 h1, h2, h3, h4 { page-break-after: avoid; }
 h1 { page-break-before: always; }
 .content > h1:first-child { page-break-before: avoid; }
-.content { counter-reset: bolum; }
-.content h2:not(#ozet):not(#onemli-kavramlar):not(#dikkat-edilmesi-gerekenler):not(#tekrar-sorulari) { counter-increment: bolum; }
+.content { counter-reset: section; }
+.content h2:not(#ozet):not(#onemli-kavramlar):not(#dikkat-edilmesi-gerekenler):not(#tekrar-sorulari) { counter-increment: section; }
 
-/* Kod */
+/* Code */
 code { font-family: var(--font-mono); }
 .code-block { page-break-inside: avoid; overflow: hidden; margin: 3mm 0 5mm; }
 .code-block .codehilite, .code-block pre { margin: 0; background: transparent !important; }
 pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; line-height: 1.55; }
 pre code { background: none !important; padding: 0 !important; border: none !important; }
 
-/* Tablo */
+/* Table */
 table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; }
 tr { page-break-inside: avoid; }
 th { text-align: left; }
 td, th { vertical-align: top; }
 
-/* Uyarılar */
+/* Alerts */
 .alert { display: flex; page-break-inside: avoid; }
 .alert .icon { flex: none; }
 .alert .body { flex: 1; }
 .alert .alert-desc p { margin: 0; }
 
-/* Tekrar soruları */
+/* Review questions */
 h2#tekrar-sorulari + ol { list-style: none; padding: 0; counter-reset: q; }
 h2#tekrar-sorulari + ol > li { counter-increment: q; position: relative; page-break-inside: avoid; }
 h2#tekrar-sorulari + ol > li::before { content: counter(q); position: absolute; }

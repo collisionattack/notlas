@@ -1,6 +1,6 @@
 ---
 name: notlas
-description: Turn a course lecture transcript (Udemy or any video course; pasted text or a .vtt/.srt/.txt file) into a structured Turkish study note, saved as Markdown + PDF in the user's indexed notes repository (ders-notlari/). Use when the user shares a lecture transcript and asks to make notes from it ("ders notu çıkar", "notlaştır", "bu dersi not al", "turn this transcript into notes"), asks to process transcripts in the transkriptler/ folder, or types /notlas. Not for general PDF creation or summarizing other documents.
+description: Turn a course lecture transcript (Udemy or any video course; pasted text or a .vtt/.srt/.txt file) into a structured Turkish study note, saved as Markdown + PDF in the user's indexed notes repository (lecture-notes/). Use when the user shares a lecture transcript and asks to make notes from it ("ders notu çıkar", "notlaştır", "bu dersi not al", "turn this transcript into notes"), asks to process transcripts in the transcripts/ folder, or types /notlas. Not for general PDF creation or summarizing other documents.
 ---
 
 # Notlas
@@ -14,11 +14,11 @@ Scripts live in this skill's `scripts/` folder. Run them with `python3` (never `
 Decide the repository root (`<root>`) first, because later steps read from it:
 
 1. The user named a path → use it.
-2. The working folder contains `CLAUDE.md` and `ders-notlari/` (the Notlas project folder) → `<root>` is that `ders-notlari/`.
+2. The working folder contains `CLAUDE.md` and `lecture-notes/` (the Notlas project folder) → `<root>` is that `lecture-notes/`.
 3. A folder on the user's computer is connected:
-   - with a shell on that computer → run every script there, `<root>` = `ders-notlari/` inside the folder the user chose.
-   - with file transfer only → work on a local copy. **Before saving**, copy the course's existing `kurs.json` (and the root `README.md`) from the computer into the same relative paths of the local copy; afterwards copy back every file the script reports as written plus `INDEX.md`, `kurs.json` and `README.md`. Without the old `kurs.json`, the index would list only the new lecture. If you could not fetch it, run `save_note.py --reindex` on the full repository later, or tell the user.
-4. None of the above (plain cloud chat) → `<root>` = `./ders-notlari/`; at the end send the user the note's `.md` and `.pdf`. Mention that indexes only cover this session's notes unless they attach their existing `kurs.json`.
+   - with a shell on that computer → run every script there, `<root>` = `lecture-notes/` inside the folder the user chose.
+   - with file transfer only → work on a local copy. **Before saving**, copy the course's existing `course.json` (and the root `README.md`) from the computer into the same relative paths of the local copy; afterwards copy back every file the script reports as written plus `INDEX.md`, `course.json` and `README.md`. Without the old `course.json`, the index would list only the new lecture. If you could not fetch it, run `save_note.py --reindex` on the full repository later, or tell the user.
+4. None of the above (plain cloud chat) → `<root>` = `./lecture-notes/`; at the end send the user the note's `.md` and `.pdf`. Mention that indexes only cover this session's notes unless they attach their existing `course.json`.
 
 Then list existing courses:
 
@@ -26,20 +26,20 @@ Then list existing courses:
 python3 scripts/save_note.py --list-courses --root <root>
 ```
 
-If the lecture belongs to a listed course, use that course's name **exactly** as listed in the `kurs:` field. Different spellings create a second course folder.
+If the lecture belongs to a listed course, use that course's name **exactly** as listed in the `course:` field. Different spellings create a second course folder.
 
 ## 2. Gather the inputs
 
 | Input | Required | Notes |
 |---|---|---|
-| Transcript | Yes | Pasted text, an attached file, or a file in the Notlas `transkriptler/` folder |
+| Transcript | Yes | Pasted text, an attached file, or a file in the Notlas `transcripts/` folder |
 | Course name | Yes | Reuse the existing name from step 1 when the course already exists |
 | Section and lecture (title + number) | Strongly recommended | Format `Bölüm 3 - Title`, `Ders 14 - Title`; numbers decide file order and prevent collisions |
 | Course description | No | Context for terminology; pass it to the script on the course's first save, never copy it into the note |
 
 If there is no transcript, ask for it. For anything else that is missing, make a sensible assumption and continue, except in the cases listed in "Ask only when" below.
 
-If the transcript is VTT/SRT or has timestamps, clean it first. Write intermediate files to a scratch location (Notlas project: `transkriptler/`; otherwise a temp folder), never into `<root>`:
+If the transcript is VTT/SRT or has timestamps, clean it first. Write intermediate files to a scratch location (Notlas project: `transcripts/`; otherwise a temp folder), never into `<root>`:
 
 ```bash
 python3 scripts/clean_transcript.py <input> > <scratch>/temiz.txt
@@ -75,9 +75,9 @@ Use exactly this skeleton. The four Turkish headings below are **fixed strings**
 
 ````markdown
 ---
-kurs: "Course Name"
-bolum: "Bölüm 3 - Section Title"
-ders: "Ders 12 - Lecture Title"
+course: "Course Name"
+section: "Bölüm 3 - Section Title"
+lecture: "Ders 12 - Lecture Title"
 ---
 
 # Lecture Title
@@ -127,15 +127,15 @@ python3 scripts/save_note.py <scratch>/note.md --root <root> [--course-descripti
 
 Pass `--course-description` on a course's first save (or when it changes).
 
-The script validates the note, places it at `<root>/<course-slug>/notlar/<NN-section>/<NNN-lecture>.md`, renders `pdf/…/<NNN-lecture>.pdf`, and rebuilds the course `INDEX.md`, `kurs.json` and the root `README.md`. Indexes are rebuilt from `kurs.json` plus every note on disk, so re-saving never drops other lectures.
+The script validates the note, places it at `<root>/<course-slug>/notes/<NN-section>/<NNN-lecture>.md`, renders `pdf/…/<NNN-lecture>.pdf`, and rebuilds the course `INDEX.md`, `course.json` and the root `README.md`. Indexes are rebuilt from `course.json` plus every note on disk, so re-saving never drops other lectures.
 
 **If the script stops with an error, fix the cause rather than reaching for the bypass flag:**
 
 | Error | What to do |
 |---|---|
 | note structure (heading misspelled/missing) | Fix the note's headings, then save again. `--skip-checks` is only for notes the user deliberately structured differently. |
-| course does not exist yet, but similar courses do | Same course → copy the listed name into `kurs:` exactly. Truly different course → re-run with `--new-course`. |
-| path already holds a different lecture / no `bolum:` | Add the correct `bolum:` (preferred). Use `--overwrite` only when you are deliberately replacing the same lecture. |
+| course does not exist yet, but similar courses do | Same course → copy the listed name into `course:` exactly. Truly different course → re-run with `--new-course`. |
+| path already holds a different lecture / no `section:` | Add the correct `section:` (preferred). Use `--overwrite` only when you are deliberately replacing the same lecture. |
 
 Re-saving a lecture with the same section and title updates it in place; this is expected.
 

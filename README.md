@@ -13,16 +13,16 @@ Notes are written in Turkish; technical terms keep their original English in par
 ## Notes repository
 
 ```
-ders-notlari/
+lecture-notes/
 ├── README.md                             # all courses
 └── <course-slug>/
     ├── INDEX.md                          # per lecture: summary, topics, concepts, file links
-    ├── kurs.json                         # same data, machine-readable
-    ├── notlar/<NN-section>/<NNN-lecture>.md   # source for agents
+    ├── course.json                         # same data, machine-readable
+    ├── notes/<NN-section>/<NNN-lecture>.md   # source for agents
     └── pdf/<NN-section>/<NNN-lecture>.pdf     # readable copy
 ```
 
-To use a course as a knowledge source in another project, point the agent at the course's `INDEX.md`. It finds the relevant lecture there and opens only that Markdown file. See `examples/ders-notlari/` for a filled-in sample.
+To use a course as a knowledge source in another project, point the agent at the course's `INDEX.md`. It finds the relevant lecture there and opens only that Markdown file. See `examples/lecture-notes/` for a filled-in sample.
 
 ## Using it as a project folder
 
@@ -32,13 +32,13 @@ Clone the repo and open the folder in Claude Code or the Claude desktop app. `CL
 notlas/
 ├── CLAUDE.md        # workflow instructions for Claude
 ├── SKILL.md         # note format and writing rules
-├── transkriptler/   # drop raw transcripts here (git-ignored)
-└── ders-notlari/    # your notes repository (git-ignored)
+├── transcripts/   # drop raw transcripts here (git-ignored)
+└── lecture-notes/    # your notes repository (git-ignored)
 ```
 
 ## Installing the skill
 
-**Claude app:** zip this folder without `.git/`, `ders-notlari/` and `transkriptler/` (or download `notlas.zip` from Releases), then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
+**Claude app:** zip this folder without `.git/`, `lecture-notes/` and `transcripts/` (or download `notlas.zip` from Releases), then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
 
 **Claude Code:**
 ```bash
@@ -60,10 +60,10 @@ or type `/notlas`.
 ```bash
 pip install weasyprint markdown pygments
 python3 scripts/clean_transcript.py lecture.vtt > lecture.txt          # VTT/SRT → plain text
-python3 scripts/save_note.py note.md --root ders-notlari \
+python3 scripts/save_note.py note.md --root lecture-notes \
         --course-description "..."                                    # save: MD + PDF + indexes
-python3 scripts/save_note.py --list-courses --root ders-notlari       # existing courses
-python3 scripts/save_note.py --reindex --root ders-notlari            # rebuild indexes from disk
+python3 scripts/save_note.py --list-courses --root lecture-notes       # existing courses
+python3 scripts/save_note.py --reindex --root lecture-notes            # rebuild indexes from disk
 python3 scripts/build_pdf.py note.md -o note.pdf                      # PDF only
 ```
 
@@ -77,9 +77,9 @@ PDF rendering uses WeasyPrint and falls back to an installed Chrome/Edge (on mac
 SKILL.md                    # instructions for Claude
 CLAUDE.md                   # project-folder workflow
 scripts/clean_transcript.py # strips timestamps and repeated caption lines
-scripts/save_note.py        # validates and stores notes, builds INDEX.md / kurs.json / README.md
+scripts/save_note.py        # validates and stores notes, builds INDEX.md / course.json / README.md
 scripts/build_pdf.py        # Markdown → PDF
-assets/themes/akademik.css  # Tufte-style theme: ivory paper, EB Garamond, margin notes
+assets/themes/academic.css  # Tufte-style theme: ivory paper, EB Garamond, margin notes
 assets/fonts/               # EB Garamond, Inter, JetBrains Mono (SIL OFL, full Turkish coverage)
 examples/                   # sample transcript, notes and a sample repository
 ```

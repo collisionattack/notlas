@@ -6,9 +6,9 @@ Usage:
 
 The Markdown file may start with a YAML front-matter block:
     ---
-    kurs: "Course name"
-    bolum: "Bölüm 3 - Section name"
-    ders: "Ders 12 - Lecture name"
+    course: "Course name"
+    section: "Bölüm 3 - Section name"
+    lecture: "Ders 12 - Lecture name"
     ---
 
 Callouts: '> ⚠️ ...' (Dikkat), '> 💡 ...' (İpucu; '> 💡 Ek not: ...' sets the title), '> ℹ️ ...' (Not).
@@ -34,7 +34,7 @@ except ImportError:
 HERE = Path(__file__).resolve().parent
 ASSETS = HERE.parent / "assets"
 THEMES_DIR = ASSETS / "themes"
-VARSAYILAN_TEMA = "akademik"
+DEFAULT_THEME = "academic"
 FONTS_DIR = ASSETS / "fonts"
 AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz",
          "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -61,6 +61,9 @@ def slugify(value, separator="-"):
     return re.sub(rf"[{separator}\s]+", separator, value)
 
 
+LEGACY_KEYS = {"kurs": "course", "bolum": "section", "ders": "lecture"}
+
+
 def _yaml_scalar(v: str) -> str:
     """Parse a simple YAML scalar: strips only the outer matching quotes, keeps inner ones."""
     v = v.strip()
@@ -80,6 +83,9 @@ def split_front_matter(text: str):
                 k, v = line.split(":", 1)
                 meta[slugify(k.strip()).replace("-", "_")] = _yaml_scalar(v)
         text = text[m.end():]
+    for old, new in LEGACY_KEYS.items():  # notes written before the English rename
+        if old in meta and new not in meta:
+            meta[new] = meta.pop(old)
     return meta, text
 
 
@@ -151,7 +157,7 @@ def _marker(p: str):
     return None
 
 
-def render_html(md_text: str, meta: dict, toc: bool, tema: str = VARSAYILAN_TEMA) -> str:
+def render_html(md_text: str, meta: dict, toc: bool, theme: str = DEFAULT_THEME) -> str:
     md = markdown.Markdown(
         extensions=["extra", "sane_lists", "toc", "codehilite"],
         extension_configs={
@@ -164,9 +170,9 @@ def render_html(md_text: str, meta: dict, toc: bool, tema: str = VARSAYILAN_TEMA
     body = build_alerts(body)
 
     first_h1 = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.S)
-    ders = meta.get("ders") or (re.sub("<[^>]+>", "", first_h1.group(1)) if first_h1 else "Ders Notu")
-    kurs = meta.get("kurs", "")
-    bolum = meta.get("bolum", "")
+    ders = meta.get("lecture") or (re.sub("<[^>]+>", "", first_h1.group(1)) if first_h1 else "Ders Notu")
+    kurs = meta.get("course", "")
+    bolum = meta.get("section", "")
     bugun = dt.date.today()
     tarih = f"{bugun.day} {AYLAR[bugun.month - 1]} {bugun.year}"
     e = html.escape
@@ -193,7 +199,7 @@ def render_html(md_text: str, meta: dict, toc: bool, tema: str = VARSAYILAN_TEMA
         + '</div><div class="separator"></div>'
         + f'<div class="meta">{meta_cells}</div>'
         + '<div class="foot">Ders transkriptinden derlenmiştir · Kişisel kullanım içindir</div>'
-        '<span class="s-ders">' + e(ders) + '</span></section>'
+        '<span class="s-lecture">' + e(ders) + '</span></section>'
     )
 
     YAN = {"ozet", "onemli-kavramlar", "dikkat-edilmesi-gerekenler", "tekrar-sorulari"}
@@ -213,11 +219,11 @@ def render_html(md_text: str, meta: dict, toc: bool, tema: str = VARSAYILAN_TEMA
                     f'<div class="toc-list">{toc_list}</div>'
                     '</div></section>')
 
-    css = theme_css(tema)
+    css = theme_css(theme)
     pm = re.search(r"pygments:\s*([\w-]+)", css)
     pyg_css = HtmlFormatter(style=pm.group(1) if pm else "github-dark").get_style_defs(".codehilite")
     return (
-        f'<!doctype html><html lang="tr" class="tema-{e(tema)}"><head><meta charset="utf-8">'
+        f'<!doctype html><html lang="tr" class="theme-{e(theme)}"><head><meta charset="utf-8">'
         f"<title>{e(ders)}</title><style>{font_faces()}\n{pyg_css}\n"
         f".codehilite{{background:transparent!important}}\n{css}"
         "</style></head><body>"
@@ -242,11 +248,11 @@ def font_faces() -> str:
     return "\n".join(rules)
 
 
-def theme_css(tema: str) -> str:
-    path = THEMES_DIR / f"{tema}.css"
+def theme_css(theme: str) -> str:
+    path = THEMES_DIR / f"{theme}.css"
     if not path.exists():
         mevcut = ", ".join(sorted(p.stem for p in THEMES_DIR.glob("*.css")))
-        sys.exit(f"Theme not found: {tema}. Available: {mevcut}")
+        sys.exit(f"Theme not found: {theme}. Available: {mevcut}")
     css = path.read_text(encoding="utf-8")
     if "uses: base" in css:
         css = (THEMES_DIR / "_base.css").read_text(encoding="utf-8") + "\n" + css
@@ -290,8 +296,8 @@ def main():
     ap = argparse.ArgumentParser(description="Lecture note Markdown → PDF")
     ap.add_argument("markdown_file")
     ap.add_argument("-o", "--output")
-    ap.add_argument("-t", "--tema", default=VARSAYILAN_TEMA,
-                    help="Theme name (assets/themes/*.css); default: akademik")
+    ap.add_argument("-t", "--theme", default=DEFAULT_THEME,
+                    help="Theme name (assets/themes/*.css); default: academic")
     ap.add_argument("--no-toc", action="store_true", help="Skip the table-of-contents page")
     ap.add_argument("--html", action="store_true", help="Also save the intermediate HTML")
     a = ap.parse_args()
@@ -299,7 +305,7 @@ def main():
     src = Path(a.markdown_file)
     out = Path(a.output) if a.output else src.with_suffix(".pdf")
     meta, md_text = split_front_matter(src.read_text(encoding="utf-8"))
-    html_str = render_html(md_text, meta, toc=not a.no_toc, tema=a.tema)
+    html_str = render_html(md_text, meta, toc=not a.no_toc, theme=a.theme)
 
     if a.html:
         out.with_suffix(".html").write_text(html_str, encoding="utf-8")

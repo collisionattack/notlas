@@ -1,0 +1,31 @@
+{
+  "course": "Next.js ile Full-Stack Web Geliştirme",
+  "description": "App Router, veri çekme, Server Actions ve dağıtım konularını kapsayan uygulamalı Next.js kursu.",
+  "lectures": [
+    {
+      "section_no": 5,
+      "section": "App Router Temelleri",
+      "lecture_no": 23,
+      "lecture": "Server Components ve Client Components",
+      "summary": "Bu derste Next.js App Router'ın temelindeki ayrım ele alınıyor: bir bileşenin sunucuda mı yoksa tarayıcıda mı çalışacağı. Varsayılan olarak her bileşenin Server Component olduğu, \"use client\" yönergesinin bir sınır (boundary) çizdiği, iki tür arasında veri…",
+      "topics": [
+        "İki Ortam, İki Bileşen Türü",
+        "Server Components",
+        "Client Components ve \"use client\"",
+        "Sınırı Geçen Veriler: Props Kuralları",
+        "Kompozisyon Desenleri"
+      ],
+      "concepts": [
+        "Server Component",
+        "Client Component",
+        "\"use client\"",
+        "Hydration",
+        "Serileştirilebilir props",
+        "server-only"
+      ],
+      "md": "notes/05-app-router-temelleri/023-server-components-ve-client-components.md",
+      "pdf": "pdf/05-app-router-temelleri/023-server-components-ve-client-components.pdf",
+      "updated": "2026-11-08"
+    }
+  ]
+}

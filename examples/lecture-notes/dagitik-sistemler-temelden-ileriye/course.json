@@ -1,0 +1,30 @@
+{
+  "course": "Dağıtık Sistemler: Temelden İleriye",
+  "description": "Dağıtık veri sistemlerinin temel ödünleşimlerini, tutarlılık modellerini ve uzlaşı algoritmalarını anlatan kurs.",
+  "lectures": [
+    {
+      "section_no": 3,
+      "section": "Tutarlılık ve Uzlaşı",
+      "lecture_no": 14,
+      "lecture": "CAP Teoremi ve Tutarlılık Modelleri",
+      "summary": "Bu derste, birden fazla makineye dağıtılmış bir veri sisteminin ağ bölünmesi (network partition) yaşadığında neden aynı anda hem tutarlı hem de erişilebilir kalamayacağı ele alınıyor. CAP teoreminin gerçekte ne söylediği, sıkça yapılan yanlış yorumlar ve…",
+      "topics": [
+        "Problemin Tanımı",
+        "CAP Teoremi",
+        "Tutarlılık Modelleri Yelpazesi",
+        "Quorum ile Ayarlanabilir Tutarlılık",
+        "PACELC: Bölünme Yokken Ne Olur?"
+      ],
+      "concepts": [
+        "Ağ bölünmesi (network partition)",
+        "Quorum",
+        "Doğrusallaştırılabilirlik",
+        "Nihai tutarlılık",
+        "PACELC"
+      ],
+      "md": "notes/03-tutarlilik-ve-uzlasi/014-cap-teoremi-ve-tutarlilik-modelleri.md",
+      "pdf": "pdf/03-tutarlilik-ve-uzlasi/014-cap-teoremi-ve-tutarlilik-modelleri.pdf",
+      "updated": "2026-11-08"
+    }
+  ]
+}
