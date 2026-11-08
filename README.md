@@ -90,6 +90,7 @@ scripts/build_pdf.py        # Markdown → PDF
 assets/themes/academic.css  # Tufte-style theme: ivory paper, EB Garamond, margin notes
 assets/fonts/               # EB Garamond, Inter, JetBrains Mono (SIL OFL, full Turkish coverage)
 docs/preview.png            # sample output shown above
+CHANGELOG.md                # release notes
 ```
 
 ## Note
