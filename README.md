@@ -1,101 +1,103 @@
 # Notlas
 
-*not + atlas* — a Claude skill that turns course lecture transcripts (Udemy or any video course) into structured study notes. Each note is saved twice: as an academic-style **PDF** for reading and as **Markdown** in an indexed notes repository that AI agents can use as a knowledge source.
+**Turn course lecture transcripts into study notes you can read, and your AI agents can use.**
 
-Notes are written in Turkish; technical terms keep their original English in parentheses, and code, commands and identifiers are never translated.
+Notlas (*not* "note" + *atlas*) is a [Claude](https://claude.ai) skill. Give it the transcript of a Udemy (or any video course) lecture and it writes a structured study note, saved as an academic-style PDF for you and as Markdown in an indexed repository your coding agents can search.
 
 ![Sample note: cover, first page and a page with margin notes](docs/preview.png)
 
-## How it works
+<sub>Full sample: [docs/sample.pdf](docs/sample.pdf)</sub>
 
-1. You give Claude a transcript plus the course name and section/lecture titles (and optionally the course description).
-2. Claude re-teaches the lecture as a Markdown note: summary, topic sections, runnable code, a concept table, pitfalls and review questions.
-3. `scripts/save_note.py` validates the note, stores it in the repository, renders the PDF and rebuilds the indexes.
-4. Claude shows the result right away: a preview image of the cover and first pages, plus the PDF.
+## Features
 
-## Notes repository
+- **Re-teaches, doesn't summarize.** Each note has a summary, topic sections, runnable code, a concept table, pitfalls and review questions. Notes are written in Turkish; technical terms keep their English original, and code is never translated.
+- **Agent-ready repository.** Every course gets an `INDEX.md` listing each lecture's summary, topics and concepts, so an agent can find the right note and open only that file.
+- **Academic PDF.** Tufte-style layout with a cover, table of contents, margin notes and highlighted code, with embedded fonts that cover all Turkish characters.
+- **Nothing to remember.** `/notlas` alone returns a fill-in template; a bare transcript gets one round of questions with sensible defaults.
+- **Safe by default.** Misspelled sections, near-duplicate course names and saves that would replace a different lecture are refused. Each save ends with a preview image of the result.
 
-```
-courses/
-├── README.md                             # all courses
-└── <course-slug>/
-    ├── INDEX.md                          # per lecture: summary, topics, concepts, file links
-    ├── course.json                         # same data, machine-readable
-    ├── notes/<NN-section>/<NNN-lecture>.md   # source for agents
-    └── pdf/<NN-section>/<NNN-lecture>.pdf     # readable copy
-```
+## Quick start
 
-To use a course as a knowledge source in another project, point the agent at the course's `INDEX.md`. It finds the relevant lecture there and opens only that Markdown file.
+**Claude app (desktop)**
 
-## Using it as a project folder
+1. Download `notlas.zip` from the [latest release](https://github.com/mrttyyldrm/notlas/releases/latest) and upload it under **Customize → Skills → + → Create skill → Upload a skill**. Make sure code execution is enabled in **Settings → Capabilities**.
+2. Clone this repository, then in a new chat attach the folder with **+ → Add folder**.
+3. Type `/notlas` and follow the template.
 
-Clone the repo and open the folder in Claude Code or the Claude desktop app. `CLAUDE.md` describes the workflow:
+**Claude Code**
 
-```
-notlas/
-├── CLAUDE.md        # workflow instructions for Claude
-├── SKILL.md         # note format and writing rules
-├── transcripts/   # drop raw transcripts here (git-ignored)
-└── courses/    # your notes repository (git-ignored)
-```
-
-## Installing the skill
-
-**Claude app:** zip this folder without `.git/`, `courses/`, `transcripts/` and `docs/` (the command is in `CLAUDE.md`), or download `notlas.zip` from Releases, then go to **Customize → Skills → + → Create skill → Upload a skill**. Code execution and file creation must be enabled under Settings → Capabilities.
-
-**Claude Code:** link (or clone) the folder into your personal skills directory:
 ```bash
-ln -s ~/path/to/notlas ~/.claude/skills/notlas          # existing clone; edits apply immediately
-git clone https://github.com/mrttyyldrm/notlas ~/.claude/skills/notlas   # or a fresh clone
+git clone https://github.com/mrttyyldrm/notlas ~/notlas
+ln -s ~/notlas ~/.claude/skills/notlas
+cd ~/notlas && claude
 ```
 
 ## Usage
 
-You don't need to remember a format:
+Pick whichever is easiest:
 
-- Type `/notlas` (or "notlas skill'ini kullan") on its own and Claude replies with a fill-in template that lists your courses and the last lecture saved in each.
-- Paste a transcript without details and Claude asks once for whatever is missing (course, section, lecture), proposing the next lecture of the most likely course as the default.
-- Drop `nextjs_05-23.vtt` into `transcripts/` and say "notlaştır": course, section and lecture number come from the file name.
+| You do | Notlas does |
+|---|---|
+| Type `/notlas` | Replies with a template listing your courses and the last lecture of each |
+| Paste a transcript | Asks once for the missing course / section / lecture, proposing the next lecture |
+| Save `nextjs_05-23.vtt` in `transcripts/` and say *notlaştır* ("make notes") | Reads course, section and lecture from the file name |
 
-Everything at once also works:
+Or give everything at once:
 
-> Kurs: Docker ve Kubernetes
-> Bölüm 2 - Depolama / Ders 7 - Docker Volume'ları
-> *(transcript)*
-> Bunu notlaştır.
+```
+Kurs: Docker ve Kubernetes                        # course
+Bölüm 2 - Depolama / Ders 7 - Docker Volume'ları  # section / lecture
+<transcript>
+Bunu notlaştır.                                   # "turn this into notes"
+```
 
-## Scripts
+## Output
+
+```
+courses/                              (git-ignored, stays on your machine)
+├── README.md                         all courses
+└── <course>/
+    ├── INDEX.md                      every lecture: summary, topics, concepts, links
+    ├── course.json                   the same, machine-readable
+    ├── notes/<NN-section>/<NNN-lecture>.md
+    └── pdf/<NN-section>/<NNN-lecture>.pdf
+```
+
+To use a course as a knowledge source in another project, add a line like this to that project's `CLAUDE.md`:
+
+```markdown
+For Next.js questions, check my course notes first: ~/notlas/courses/<course>/INDEX.md
+```
+
+## Requirements
+
+Python 3.9+ with `markdown`, `pygments`, `weasyprint` and `pillow`. In the Claude app these are installed automatically when needed. For local use:
 
 ```bash
-pip install weasyprint markdown pygments
-python3 scripts/clean_transcript.py lecture.vtt > lecture.txt          # VTT/SRT → plain text
-python3 scripts/save_note.py note.md --root courses \
-        --course-description "..."                                    # save: MD + PDF + indexes
-python3 scripts/save_note.py --list-courses --root courses       # existing courses
-python3 scripts/save_note.py --reindex --root courses [--prune]  # rebuild indexes from disk
-python3 scripts/build_pdf.py note.md -o note.pdf                      # PDF only
-python3 scripts/preview.py note.pdf -o preview.png                   # cover + first pages as one image
+pip3 install markdown pygments weasyprint pillow
+brew install pango poppler      # macOS: PDF rendering and previews
 ```
 
-`save_note.py` refuses misspelled section headings, course names that look like an existing course, and saves that would replace a different lecture; each check names the flag that overrides it. If PDF rendering fails, the note and indexes are still saved and a warning explains why.
+| Problem | Fix |
+|---|---|
+| "PDF not created" | Install `pango` (macOS) or Google Chrome; the Markdown note is saved either way |
+| No preview image | Install `poppler` or `pip3 install pymupdf` |
+| Notes land in an old folder | Re-upload the latest `notlas.zip`; older versions used other folder names |
 
-PDF rendering uses WeasyPrint and falls back to an installed Chrome/Edge (on macOS, WeasyPrint needs `brew install pango`).
+## Development
 
-## Files
+| Command | Purpose |
+|---|---|
+| `scripts/save_note.py NOTE.md --root courses` | Validate, store, render and index a note |
+| `scripts/save_note.py --list-courses` / `--reindex [--prune]` | Inspect or rebuild the indexes |
+| `scripts/build_pdf.py NOTE.md -o out.pdf` | Render a single PDF |
+| `scripts/preview.py out.pdf -o preview.png` | Cover and first pages as one image |
+| `scripts/clean_transcript.py lecture.vtt` | VTT/SRT → plain paragraphs |
 
-```
-SKILL.md                    # instructions for Claude
-CLAUDE.md                   # project-folder workflow
-scripts/clean_transcript.py # strips timestamps and repeated caption lines
-scripts/save_note.py        # validates and stores notes, builds INDEX.md / course.json / README.md
-scripts/build_pdf.py        # Markdown → PDF
-scripts/preview.py          # PDF → preview image shown after each save
-assets/themes/academic.css  # Tufte-style theme: ivory paper, EB Garamond, margin notes
-assets/fonts/               # EB Garamond, Inter, JetBrains Mono (SIL OFL, full Turkish coverage)
-docs/preview.png            # sample output shown above
-CHANGELOG.md                # release notes
-```
+The PDF theme lives in `assets/themes/academic.css`; Claude's instructions are in `SKILL.md` and `CLAUDE.md`. See [CHANGELOG.md](CHANGELOG.md) for release notes. Issues and pull requests are welcome.
 
-## Note
+## License
 
-For personal use. Notes are derived from course content, so the copyright stays with the instructors. Don't publish your notes repository.
+Code is released under the [MIT License](LICENSE). Bundled fonts (EB Garamond, Inter, JetBrains Mono) are under the SIL Open Font License; see `assets/fonts/`.
+
+Notes you create are derived from course material, so the copyright stays with the instructors: keep them private. Notlas is not affiliated with Udemy or Anthropic.
