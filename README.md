@@ -4,6 +4,8 @@
 
 Notes are written in Turkish; technical terms keep their original English in parentheses, and code, commands and identifiers are never translated.
 
+![Sample note: cover, first page and a page with margin notes](docs/preview.png)
+
 ## How it works
 
 1. You give Claude a transcript plus the course name and section/lecture titles (and optionally the course description).
@@ -22,7 +24,7 @@ lecture-notes/
     └── pdf/<NN-section>/<NNN-lecture>.pdf     # readable copy
 ```
 
-To use a course as a knowledge source in another project, point the agent at the course's `INDEX.md`. It finds the relevant lecture there and opens only that Markdown file. See `examples/lecture-notes/` for a filled-in sample.
+To use a course as a knowledge source in another project, point the agent at the course's `INDEX.md`. It finds the relevant lecture there and opens only that Markdown file.
 
 ## Using it as a project folder
 
@@ -81,7 +83,7 @@ scripts/save_note.py        # validates and stores notes, builds INDEX.md / cour
 scripts/build_pdf.py        # Markdown → PDF
 assets/themes/academic.css  # Tufte-style theme: ivory paper, EB Garamond, margin notes
 assets/fonts/               # EB Garamond, Inter, JetBrains Mono (SIL OFL, full Turkish coverage)
-examples/                   # sample transcript, notes and a sample repository
+docs/preview.png            # sample output shown above
 ```
 
 ## Note
